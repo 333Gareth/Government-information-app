@@ -1,13 +1,8 @@
 """The main GOV.UK Policy Intelligence Workstation window.
 
-Threading rules followed throughout this module (this is the main fix
-from the original code):
-
-* Background threads NEVER touch Tkinter widgets, ``messagebox``, or
-  ``simpledialog`` directly. They only compute data and hand results
-  back via ``self.root.after(0, callback)``.
-* ``self.log(...)`` is safe to call from any thread -- it schedules the
-  actual widget update on the main thread internally.
+Threading rules followed throughout this module:
+* Background threads NEVER touch Tkinter widgets directly.
+* ``self.log(...)`` schedules widget updates on the main thread.
 """
 
 from __future__ import annotations
@@ -49,7 +44,7 @@ class GovApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("🇬🇧 GOV.UK Policy Intelligence Workstation")
-        self.root.geometry("1300x900")
+        self.root.geometry("1400x950")
 
         config.ensure_data_dirs()
         self.state = AppState.load()
@@ -173,16 +168,13 @@ class GovApp:
         self.e_topic.insert(0, topic)
         self.start_harvest()
 
-    # -- logging (thread-safe) ------------------------------------------------
     def log(self, msg: str) -> None:
-        """Safe to call from any thread: schedules the actual write on the main thread."""
         self.root.after(0, lambda: self._log_on_main_thread(msg))
 
     def _log_on_main_thread(self, msg: str) -> None:
         self.log_box.insert(tk.END, msg + "\n")
         self.log_box.see(tk.END)
 
-    # -- harvesting ------------------------------------------------------------
     def start_harvest(self) -> None:
         topic = self.e_topic.get().strip()
         if not topic:
@@ -191,7 +183,6 @@ class GovApp:
         threading.Thread(target=self._run_harvest, args=(topic,), daemon=True).start()
 
     def _run_harvest(self, topic: str) -> None:
-        """Runs entirely on a background thread. Must not touch widgets directly."""
         self.log(f"🔎 Scanning GOV.UK for '{topic}'...")
         try:
             target_total = int(self.sp_count.get())
@@ -220,11 +211,12 @@ class GovApp:
     # Reader tab
     # ======================================================================
     def _build_reader_tab(self) -> None:
-        paned = ttk.Panedwindow(self.tab_reader, orient="horizontal")
-        paned.pack(fill="both", expand=True, padx=5, pady=5)
+        main_paned = ttk.Panedwindow(self.tab_reader, orient="horizontal")
+        main_paned.pack(fill="both", expand=True, padx=5, pady=5)
 
-        left = ttk.LabelFrame(paned, text=" Discovered Sources ", padding=8)
-        paned.add(left, weight=1)
+        # Left Column: Discovered Sources
+        left = ttk.LabelFrame(main_paned, text=" Discovered Sources ", padding=8)
+        main_paned.add(left, weight=1)
 
         self.e_filter = ttk.Entry(left)
         self.e_filter.pack(fill="x", pady=4)
@@ -235,45 +227,54 @@ class GovApp:
         self.lb_docs.bind("<<ListboxSelect>>", self.on_doc_select)
         self.lb_docs.bind("<Double-1>", self.on_doc_double_click)
 
-        # Vertical PanedWindow on the right to make Details vs Viewer draggable
-        right_paned = ttk.Panedwindow(paned, orient="vertical")
-        paned.add(right_paned, weight=3)
+        # Right Column: Draggable Vertical Panes (Top Details vs Bottom Viewer)
+        right_v_paned = ttk.Panedwindow(main_paned, orient="vertical")
+        main_paned.add(right_v_paned, weight=4)
 
-        right_top = ttk.LabelFrame(right_paned, text=" Document Details ", padding=8)
-        right_paned.add(right_top, weight=1)
+        # TOP PANE: Document Details & Attachments Splitter
+        right_top_frame = ttk.LabelFrame(right_v_paned, text=" Document Metadata & Attachments ", padding=6)
+        right_v_paned.add(right_top_frame, weight=1)
 
-        btn_row = ttk.Frame(right_top)
+        btn_row = ttk.Frame(right_top_frame)
         btn_row.pack(fill="x", pady=(0, 4))
         self.btn_star = ttk.Button(btn_row, text="⭐ Star Source", command=self.toggle_starred)
         self.btn_star.pack(side="left", padx=2)
         ttk.Button(btn_row, text="🏷️ Set Tag", command=self.apply_custom_doc_tag).pack(side="left", padx=2)
         ttk.Button(btn_row, text="📋 Copy Citation", command=self.copy_citation_popup).pack(side="left", padx=2)
 
-        self.tab_details = ttk.Frame(right_top)
-        self.tab_details.pack(fill="both", expand=True)
+        # Horizontal Splitter for Details vs Attachments list
+        details_att_paned = ttk.Panedwindow(right_top_frame, orient="horizontal")
+        details_att_paned.pack(fill="both", expand=True)
 
-        self.txt_details = scrolledtext.ScrolledText(self.tab_details, height=8, wrap="word")
-        self.txt_details.pack(fill="both", expand=True, padx=2, pady=2)
+        # Text Details Box
+        details_box_frame = ttk.Frame(details_att_paned)
+        details_att_paned.add(details_box_frame, weight=2)
+        self.txt_details = scrolledtext.ScrolledText(details_box_frame, height=4, wrap="word")
+        self.txt_details.pack(fill="both", expand=True)
 
-        ttk.Label(self.tab_details, text="Attachments (double-click to open):").pack(anchor="w", padx=5)
+        # Attachments Panel
+        att_box_frame = ttk.LabelFrame(details_att_paned, text=" Attachments ", padding=4)
+        details_att_paned.add(att_box_frame, weight=1)
 
-        # Attachment listbox with dedicated scrollbar
-        att_frame = ttk.Frame(self.tab_details)
-        att_frame.pack(fill="both", expand=True, padx=5, pady=2)
-
-        sb_att = ttk.Scrollbar(att_frame, orient="vertical")
-        self.lb_atts = tk.Listbox(att_frame, height=4, exportselection=False, yscrollcommand=sb_att.set)
+        sb_att = ttk.Scrollbar(att_box_frame, orient="vertical")
+        self.lb_atts = tk.Listbox(att_box_frame, height=4, exportselection=False, yscrollcommand=sb_att.set)
         sb_att.config(command=self.lb_atts.yview)
-
         sb_att.pack(side="right", fill="y")
         self.lb_atts.pack(side="left", fill="both", expand=True)
         self.lb_atts.bind("<Double-1>", self.on_attachment_open)
 
-        right_bottom = ttk.Frame(right_paned)
-        right_paned.add(right_bottom, weight=2)
+        # BOTTOM PANE: Document Viewer (Heavily weighted to be large by default)
+        right_bottom_frame = ttk.Frame(right_v_paned)
+        right_v_paned.add(right_bottom_frame, weight=5)
 
-        self.reader_nb = ttk.Notebook(right_bottom)
+        # Header bar above reader with Pop-Out button
+        viewer_hdr = ttk.Frame(right_bottom_frame)
+        viewer_hdr.pack(fill="x", pady=(0, 2))
+        ttk.Button(viewer_hdr, text="🔍 Pop Out Viewer Window", command=self.pop_out_reader_pdf).pack(side="right", padx=2)
+
+        self.reader_nb = ttk.Notebook(right_bottom_frame)
         self.reader_nb.pack(fill="both", expand=True)
+
         self.reader_pdf_viewer = PDFViewerWidget(self.reader_nb, lambda: self.state.keyword_rules)
         self.reader_nb.add(self.reader_pdf_viewer, text="📕 PDF Viewer")
 
@@ -294,7 +295,6 @@ class GovApp:
             self.lb_docs.insert(tk.END, f"{icon} {doc.title}{tag_label}")
 
     def _visible_docs(self) -> list[Document]:
-        """Docs currently shown in lb_docs, honoring the active filter (same order)."""
         q = self.e_filter.get().strip().lower()
         if not q:
             return self.active_docs
@@ -349,7 +349,17 @@ class GovApp:
         if sel and self.active_atts:
             self._route_attachment_open(self.active_atts[sel[0]], viewer=self.reader_pdf_viewer, notebook=self.reader_nb)
 
-    # -- attachment routing (PDF download now runs off the main thread) --------
+    def pop_out_reader_pdf(self) -> None:
+        if not self.reader_pdf_viewer.pdf_path:
+            messagebox.showinfo("No Document Loaded", "Open a PDF attachment first to pop out the viewer.")
+            return
+        pop = tk.Toplevel(self.root)
+        pop.title(f"📖 {os.path.basename(self.reader_pdf_viewer.pdf_path)}")
+        pop.geometry("1100x850")
+        pv = PDFViewerWidget(pop, lambda: self.state.keyword_rules)
+        pv.pack(fill="both", expand=True)
+        pv.load_pdf(self.reader_pdf_viewer.pdf_path)
+
     def _route_attachment_open(self, url: str, viewer: PDFViewerWidget, notebook: ttk.Notebook) -> None:
         tag = classify_attachment_url(url)
         if "📕 PDF" in tag:
@@ -393,80 +403,61 @@ class GovApp:
     # Favorites Hub tab
     # ======================================================================
     def _build_favs_tab(self) -> None:
-        paned = ttk.Panedwindow(self.tab_favs, orient="horizontal")
-        paned.pack(fill="both", expand=True, padx=5, pady=5)
+        main_paned = ttk.Panedwindow(self.tab_favs, orient="horizontal")
+        main_paned.pack(fill="both", expand=True, padx=5, pady=5)
 
-        left = ttk.LabelFrame(paned, text=" ⭐ Starred Sources ", padding=8)
-        paned.add(left, weight=1)
+        # Left Pane: Starred Sources List
+        left = ttk.LabelFrame(main_paned, text=" ⭐ Starred Sources ", padding=8)
+        main_paned.add(left, weight=1)
         self.lb_favs = tk.Listbox(left, exportselection=False)
         self.lb_favs.pack(fill="both", expand=True)
         self.lb_favs.bind("<<ListboxSelect>>", self.on_fav_select)
         self.lb_favs.bind("<Double-1>", self.on_fav_double_click)
 
-        # Vertical PanedWindow on the right for drag-resizing
-        right_paned = ttk.Panedwindow(paned, orient="vertical")
-        paned.add(right_paned, weight=3)
+        # Right Vertical Pane (Top Details vs Bottom Previewer)
+        right_v_paned = ttk.Panedwindow(main_paned, orient="vertical")
+        main_paned.add(right_v_paned, weight=4)
 
-        right_top = ttk.LabelFrame(right_paned, text=" Details & Attachments ", padding=8)
-        right_paned.add(right_top, weight=1)
+        right_top = ttk.LabelFrame(right_v_paned, text=" Source Metadata & Assets ", padding=6)
+        right_v_paned.add(right_top, weight=1)
 
-        tab_det = ttk.Frame(right_top)
-        tab_det.pack(fill="both", expand=True)
+        # Horizontal Splitter inside top section
+        fav_det_att_paned = ttk.Panedwindow(right_top, orient="horizontal")
+        fav_det_att_paned.pack(fill="both", expand=True)
 
-        self.txt_fav_details = scrolledtext.ScrolledText(tab_det, height=6, wrap="word")
-        self.txt_fav_details.pack(fill="both", expand=True, padx=2, pady=2)
+        fav_det_frame = ttk.Frame(fav_det_att_paned)
+        fav_det_att_paned.add(fav_det_frame, weight=2)
+        self.txt_fav_details = scrolledtext.ScrolledText(fav_det_frame, height=4, wrap="word")
+        self.txt_fav_details.pack(fill="both", expand=True)
 
-        ttk.Label(tab_det, text="Attachments for selected source:").pack(anchor="w", padx=5)
-
-        # Scrollable listbox for favorite attachments
-        fav_att_frame = ttk.Frame(tab_det)
-        fav_att_frame.pack(fill="both", expand=True, padx=5, pady=2)
+        fav_att_frame = ttk.LabelFrame(fav_det_att_paned, text=" Attachments ", padding=4)
+        fav_det_att_paned.add(fav_att_frame, weight=1)
 
         sb_fav_att = ttk.Scrollbar(fav_att_frame, orient="vertical")
         self.lb_fav_atts = tk.Listbox(fav_att_frame, height=4, exportselection=False, yscrollcommand=sb_fav_att.set)
         sb_fav_att.config(command=self.lb_fav_atts.yview)
-
         sb_fav_att.pack(side="right", fill="y")
         self.lb_fav_atts.pack(side="left", fill="both", expand=True)
         self.lb_fav_atts.bind("<Double-1>", self.on_fav_att_open)
 
-        att_nb = ttk.Notebook(tab_det)
-        att_nb.pack(fill="both", expand=True, pady=(6, 0))
+        # Bottom Large PDF Previewer Pane
+        right_bottom = ttk.Frame(right_v_paned)
+        right_v_paned.add(right_bottom, weight=5)
 
-        pdf_tab = ttk.Frame(att_nb)
-        att_nb.add(pdf_tab, text="📕 All PDFs")
-        self.lb_fav_pdfs = tk.Listbox(pdf_tab, exportselection=False)
-        self.lb_fav_pdfs.pack(fill="both", expand=True)
-        self.lb_fav_pdfs.bind("<Double-1>", lambda e: self._open_filtered_fav_asset(self.lb_fav_pdfs, self.all_fav_attachments["pdf"]))
-
-        link_tab = ttk.Frame(att_nb)
-        att_nb.add(link_tab, text="🌐 All Links")
-        self.lb_fav_links = tk.Listbox(link_tab, exportselection=False)
-        self.lb_fav_links.pack(fill="both", expand=True)
-        self.lb_fav_links.bind("<Double-1>", lambda e: self._open_filtered_fav_asset(self.lb_fav_links, self.all_fav_attachments["link"]))
-
-        data_tab = ttk.Frame(att_nb)
-        att_nb.add(data_tab, text="📊 All Datasets")
-        self.lb_fav_data = tk.Listbox(data_tab, exportselection=False)
-        self.lb_fav_data.pack(fill="both", expand=True)
-        self.lb_fav_data.bind("<Double-1>", lambda e: self._open_filtered_fav_asset(self.lb_fav_data, self.all_fav_attachments["data"]))
-
-        right_bottom = ttk.Frame(right_paned)
-        right_paned.add(right_bottom, weight=2)
+        fav_hdr = ttk.Frame(right_bottom)
+        fav_hdr.pack(fill="x", pady=(0, 2))
+        ttk.Button(fav_hdr, text="🔍 Pop Out Viewer Window", command=self.pop_out_fav_pdf).pack(side="right", padx=2)
 
         self.fav_nb = ttk.Notebook(right_bottom)
         self.fav_nb.pack(fill="both", expand=True)
         self.fav_pdf_viewer = PDFViewerWidget(self.fav_nb, lambda: self.state.keyword_rules)
-        self.fav_nb.add(self.fav_pdf_viewer, text="📕 Preview")
+        self.fav_nb.add(self.fav_pdf_viewer, text="📕 PDF Preview")
 
     def _favorite_ids(self) -> list[str]:
         return list(self.state.favorite_sources.keys())
 
     def refresh_fav_hub(self) -> None:
         self.lb_favs.delete(0, tk.END)
-        self.lb_fav_pdfs.delete(0, tk.END)
-        self.lb_fav_links.delete(0, tk.END)
-        self.lb_fav_data.delete(0, tk.END)
         self.all_fav_attachments = {"pdf": [], "link": [], "data": []}
 
         for doc_id in self._favorite_ids():
@@ -474,11 +465,8 @@ class GovApp:
             self.lb_favs.insert(tk.END, f"⭐ {entry['title']}")
             for url in entry.get("attachments", []):
                 tag = classify_attachment_url(url)
-                item_str = f"{_attachment_label(url)}  [{entry['title'][:25]}...]"
                 bucket = "pdf" if "📕 PDF" in tag else ("data" if "📊 Data" in tag else "link")
                 self.all_fav_attachments[bucket].append(url)
-                target_lb = {"pdf": self.lb_fav_pdfs, "data": self.lb_fav_data, "link": self.lb_fav_links}[bucket]
-                target_lb.insert(tk.END, item_str)
 
     def on_fav_select(self, _event) -> None:
         ids = self._favorite_ids()
@@ -505,15 +493,21 @@ class GovApp:
         if sel:
             webbrowser.open_new_tab(self.state.favorite_sources[ids[sel[0]]]["url"])
 
-    def _open_filtered_fav_asset(self, listbox_widget: tk.Listbox, asset_url_list: list[str]) -> None:
-        sel = listbox_widget.curselection()
-        if sel and asset_url_list:
-            self._route_attachment_open(asset_url_list[sel[0]], viewer=self.fav_pdf_viewer, notebook=self.fav_nb)
-
     def on_fav_att_open(self, _event) -> None:
         sel = self.lb_fav_atts.curselection()
         if sel and self.fav_active_atts:
             self._route_attachment_open(self.fav_active_atts[sel[0]], viewer=self.fav_pdf_viewer, notebook=self.fav_nb)
+
+    def pop_out_fav_pdf(self) -> None:
+        if not self.fav_pdf_viewer.pdf_path:
+            messagebox.showinfo("No Document Loaded", "Open a PDF attachment first to pop out the viewer.")
+            return
+        pop = tk.Toplevel(self.root)
+        pop.title(f"📖 {os.path.basename(self.fav_pdf_viewer.pdf_path)}")
+        pop.geometry("1100x850")
+        pv = PDFViewerWidget(pop, lambda: self.state.keyword_rules)
+        pv.pack(fill="both", expand=True)
+        pv.load_pdf(self.fav_pdf_viewer.pdf_path)
 
     # ======================================================================
     # Keyword Brain tab
@@ -741,8 +735,7 @@ class GovApp:
         ttk.Button(pop, text="Search PDFs", command=run).pack(pady=5)
 
     def _cross_pdf_search_worker(self, term: str, txt: scrolledtext.ScrolledText, status: ttk.Label) -> None:
-        """Runs on a background thread; only schedules widget updates via `after`."""
-        import fitz  # local import: keeps the dependency optional at module load time
+        import fitz
 
         matches_found = 0
         for r, _dirs, files in os.walk(config.DATA_DIR):
