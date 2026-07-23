@@ -120,13 +120,13 @@ class GovApp:
 
         ttk.Label(f, text="Department:").grid(row=5, column=0, sticky="w", pady=4)
         self.cb_dept = ttk.Combobox(f, values=["All Departments", *config.DEPARTMENT_SLUGS.keys()],
-                                     state="readonly", width=25)
+                                    state="readonly", width=25)
         self.cb_dept.grid(row=5, column=1, sticky="w", pady=4, padx=5)
         self.cb_dept.set("All Departments")
 
         ttk.Label(f, text="Document Type:").grid(row=6, column=0, sticky="w", pady=4)
         self.cb_doc_type = ttk.Combobox(f, values=["All Types", *config.DOC_TYPE_SLUGS.keys()],
-                                         state="readonly", width=25)
+                                        state="readonly", width=25)
         self.cb_doc_type.grid(row=6, column=1, sticky="w", pady=4, padx=5)
         self.cb_doc_type.set("All Types")
 
@@ -235,29 +235,45 @@ class GovApp:
         self.lb_docs.bind("<<ListboxSelect>>", self.on_doc_select)
         self.lb_docs.bind("<Double-1>", self.on_doc_double_click)
 
-        right = ttk.LabelFrame(paned, text=" Document Details ", padding=8)
-        paned.add(right, weight=2)
+        # Vertical PanedWindow on the right to make Details vs Viewer draggable
+        right_paned = ttk.Panedwindow(paned, orient="vertical")
+        paned.add(right_paned, weight=3)
 
-        btn_row = ttk.Frame(right)
+        right_top = ttk.LabelFrame(right_paned, text=" Document Details ", padding=8)
+        right_paned.add(right_top, weight=1)
+
+        btn_row = ttk.Frame(right_top)
         btn_row.pack(fill="x", pady=(0, 4))
         self.btn_star = ttk.Button(btn_row, text="⭐ Star Source", command=self.toggle_starred)
         self.btn_star.pack(side="left", padx=2)
         ttk.Button(btn_row, text="🏷️ Set Tag", command=self.apply_custom_doc_tag).pack(side="left", padx=2)
         ttk.Button(btn_row, text="📋 Copy Citation", command=self.copy_citation_popup).pack(side="left", padx=2)
 
-        self.tab_details = ttk.Frame(right)
+        self.tab_details = ttk.Frame(right_top)
         self.tab_details.pack(fill="both", expand=True)
 
-        self.txt_details = scrolledtext.ScrolledText(self.tab_details, height=14, wrap="word")
+        self.txt_details = scrolledtext.ScrolledText(self.tab_details, height=8, wrap="word")
         self.txt_details.pack(fill="both", expand=True, padx=2, pady=2)
 
         ttk.Label(self.tab_details, text="Attachments (double-click to open):").pack(anchor="w", padx=5)
-        self.lb_atts = tk.Listbox(self.tab_details, height=6, exportselection=False)
-        self.lb_atts.pack(fill="x", padx=5, pady=5)
+
+        # Attachment listbox with dedicated scrollbar
+        att_frame = ttk.Frame(self.tab_details)
+        att_frame.pack(fill="both", expand=True, padx=5, pady=2)
+
+        sb_att = ttk.Scrollbar(att_frame, orient="vertical")
+        self.lb_atts = tk.Listbox(att_frame, height=4, exportselection=False, yscrollcommand=sb_att.set)
+        sb_att.config(command=self.lb_atts.yview)
+
+        sb_att.pack(side="right", fill="y")
+        self.lb_atts.pack(side="left", fill="both", expand=True)
         self.lb_atts.bind("<Double-1>", self.on_attachment_open)
 
-        self.reader_nb = ttk.Notebook(right)
-        self.reader_nb.pack(fill="both", expand=True, pady=(6, 0))
+        right_bottom = ttk.Frame(right_paned)
+        right_paned.add(right_bottom, weight=2)
+
+        self.reader_nb = ttk.Notebook(right_bottom)
+        self.reader_nb.pack(fill="both", expand=True)
         self.reader_pdf_viewer = PDFViewerWidget(self.reader_nb, lambda: self.state.keyword_rules)
         self.reader_nb.add(self.reader_pdf_viewer, text="📕 PDF Viewer")
 
@@ -387,21 +403,34 @@ class GovApp:
         self.lb_favs.bind("<<ListboxSelect>>", self.on_fav_select)
         self.lb_favs.bind("<Double-1>", self.on_fav_double_click)
 
-        right = ttk.LabelFrame(paned, text=" Details & Attachments ", padding=8)
-        paned.add(right, weight=2)
+        # Vertical PanedWindow on the right for drag-resizing
+        right_paned = ttk.Panedwindow(paned, orient="vertical")
+        paned.add(right_paned, weight=3)
 
-        tab_det = ttk.Frame(right)
+        right_top = ttk.LabelFrame(right_paned, text=" Details & Attachments ", padding=8)
+        right_paned.add(right_top, weight=1)
+
+        tab_det = ttk.Frame(right_top)
         tab_det.pack(fill="both", expand=True)
 
-        self.txt_fav_details = scrolledtext.ScrolledText(tab_det, height=10, wrap="word")
+        self.txt_fav_details = scrolledtext.ScrolledText(tab_det, height=6, wrap="word")
         self.txt_fav_details.pack(fill="both", expand=True, padx=2, pady=2)
 
         ttk.Label(tab_det, text="Attachments for selected source:").pack(anchor="w", padx=5)
-        self.lb_fav_atts = tk.Listbox(tab_det, height=6, exportselection=False)
-        self.lb_fav_atts.pack(fill="x", padx=5, pady=5)
+
+        # Scrollable listbox for favorite attachments
+        fav_att_frame = ttk.Frame(tab_det)
+        fav_att_frame.pack(fill="both", expand=True, padx=5, pady=2)
+
+        sb_fav_att = ttk.Scrollbar(fav_att_frame, orient="vertical")
+        self.lb_fav_atts = tk.Listbox(fav_att_frame, height=4, exportselection=False, yscrollcommand=sb_fav_att.set)
+        sb_fav_att.config(command=self.lb_fav_atts.yview)
+
+        sb_fav_att.pack(side="right", fill="y")
+        self.lb_fav_atts.pack(side="left", fill="both", expand=True)
         self.lb_fav_atts.bind("<Double-1>", self.on_fav_att_open)
 
-        att_nb = ttk.Notebook(right)
+        att_nb = ttk.Notebook(tab_det)
         att_nb.pack(fill="both", expand=True, pady=(6, 0))
 
         pdf_tab = ttk.Frame(att_nb)
@@ -422,7 +451,11 @@ class GovApp:
         self.lb_fav_data.pack(fill="both", expand=True)
         self.lb_fav_data.bind("<Double-1>", lambda e: self._open_filtered_fav_asset(self.lb_fav_data, self.all_fav_attachments["data"]))
 
-        self.fav_nb = ttk.Notebook(right)
+        right_bottom = ttk.Frame(right_paned)
+        right_paned.add(right_bottom, weight=2)
+
+        self.fav_nb = ttk.Notebook(right_bottom)
+        self.fav_nb.pack(fill="both", expand=True)
         self.fav_pdf_viewer = PDFViewerWidget(self.fav_nb, lambda: self.state.keyword_rules)
         self.fav_nb.add(self.fav_pdf_viewer, text="📕 Preview")
 
