@@ -227,7 +227,7 @@ class GovApp:
         self.lb_docs.bind("<<ListboxSelect>>", self.on_doc_select)
         self.lb_docs.bind("<Double-1>", self.on_doc_double_click)
 
-        # Right Column: Draggable Vertical Panes (Top Details vs Bottom Viewer)
+        # Right Column: Draggable Vertical Panes
         right_v_paned = ttk.Panedwindow(main_paned, orient="vertical")
         main_paned.add(right_v_paned, weight=4)
 
@@ -242,19 +242,19 @@ class GovApp:
         ttk.Button(btn_row, text="🏷️ Set Tag", command=self.apply_custom_doc_tag).pack(side="left", padx=2)
         ttk.Button(btn_row, text="📋 Copy Citation", command=self.copy_citation_popup).pack(side="left", padx=2)
 
-        # Horizontal Splitter for Details vs Attachments list
-        details_att_paned = ttk.Panedwindow(right_top_frame, orient="horizontal")
-        details_att_paned.pack(fill="both", expand=True)
+        # Explicit Horizontal Splitter for Details vs Attachments
+        self.reader_details_att_paned = ttk.Panedwindow(right_top_frame, orient="horizontal")
+        self.reader_details_att_paned.pack(fill="both", expand=True)
 
-        # Text Details Box
-        details_box_frame = ttk.Frame(details_att_paned)
-        details_att_paned.add(details_box_frame, weight=2)
+        # Text Details Box (Left 50%)
+        details_box_frame = ttk.Frame(self.reader_details_att_paned)
+        self.reader_details_att_paned.add(details_box_frame, weight=1)
         self.txt_details = scrolledtext.ScrolledText(details_box_frame, height=4, wrap="word")
         self.txt_details.pack(fill="both", expand=True)
 
-        # Attachments Panel
-        att_box_frame = ttk.LabelFrame(details_att_paned, text=" Attachments ", padding=4)
-        details_att_paned.add(att_box_frame, weight=1)
+        # Attachments Panel (Right 50%)
+        att_box_frame = ttk.LabelFrame(self.reader_details_att_paned, text=" Attachments ", padding=4)
+        self.reader_details_att_paned.add(att_box_frame, weight=1)
 
         sb_att = ttk.Scrollbar(att_box_frame, orient="vertical")
         self.lb_atts = tk.Listbox(att_box_frame, height=4, exportselection=False, yscrollcommand=sb_att.set)
@@ -263,11 +263,19 @@ class GovApp:
         self.lb_atts.pack(side="left", fill="both", expand=True)
         self.lb_atts.bind("<Double-1>", self.on_attachment_open)
 
-        # BOTTOM PANE: Document Viewer (Heavily weighted to be large by default)
+        # Force initial 50/50 sash placement on first render
+        def _set_reader_sash(event):
+            w = event.width
+            if w > 100:
+                self.reader_details_att_paned.sashpos(0, int(w * 0.5))
+                self.reader_details_att_paned.unbind("<Configure>")
+
+        self.reader_details_att_paned.bind("<Configure>", _set_reader_sash)
+
+        # BOTTOM PANE: Document Viewer
         right_bottom_frame = ttk.Frame(right_v_paned)
         right_v_paned.add(right_bottom_frame, weight=5)
 
-        # Header bar above reader with Pop-Out button
         viewer_hdr = ttk.Frame(right_bottom_frame)
         viewer_hdr.pack(fill="x", pady=(0, 2))
         ttk.Button(viewer_hdr, text="🔍 Pop Out Viewer Window", command=self.pop_out_reader_pdf).pack(side="right", padx=2)
@@ -414,24 +422,24 @@ class GovApp:
         self.lb_favs.bind("<<ListboxSelect>>", self.on_fav_select)
         self.lb_favs.bind("<Double-1>", self.on_fav_double_click)
 
-        # Right Vertical Pane (Top Details vs Bottom Previewer)
+        # Right Vertical Pane
         right_v_paned = ttk.Panedwindow(main_paned, orient="vertical")
         main_paned.add(right_v_paned, weight=4)
 
         right_top = ttk.LabelFrame(right_v_paned, text=" Source Metadata & Assets ", padding=6)
         right_v_paned.add(right_top, weight=1)
 
-        # Horizontal Splitter inside top section
-        fav_det_att_paned = ttk.Panedwindow(right_top, orient="horizontal")
-        fav_det_att_paned.pack(fill="both", expand=True)
+        # Explicit Horizontal Splitter
+        self.fav_det_att_paned = ttk.Panedwindow(right_top, orient="horizontal")
+        self.fav_det_att_paned.pack(fill="both", expand=True)
 
-        fav_det_frame = ttk.Frame(fav_det_att_paned)
-        fav_det_att_paned.add(fav_det_frame, weight=2)
+        fav_det_frame = ttk.Frame(self.fav_det_att_paned)
+        self.fav_det_att_paned.add(fav_det_frame, weight=1)
         self.txt_fav_details = scrolledtext.ScrolledText(fav_det_frame, height=4, wrap="word")
         self.txt_fav_details.pack(fill="both", expand=True)
 
-        fav_att_frame = ttk.LabelFrame(fav_det_att_paned, text=" Attachments ", padding=4)
-        fav_det_att_paned.add(fav_att_frame, weight=1)
+        fav_att_frame = ttk.LabelFrame(self.fav_det_att_paned, text=" Attachments ", padding=4)
+        self.fav_det_att_paned.add(fav_att_frame, weight=1)
 
         sb_fav_att = ttk.Scrollbar(fav_att_frame, orient="vertical")
         self.lb_fav_atts = tk.Listbox(fav_att_frame, height=4, exportselection=False, yscrollcommand=sb_fav_att.set)
@@ -439,6 +447,15 @@ class GovApp:
         sb_fav_att.pack(side="right", fill="y")
         self.lb_fav_atts.pack(side="left", fill="both", expand=True)
         self.lb_fav_atts.bind("<Double-1>", self.on_fav_att_open)
+
+        # Force initial 50/50 sash placement on first render
+        def _set_fav_sash(event):
+            w = event.width
+            if w > 100:
+                self.fav_det_att_paned.sashpos(0, int(w * 0.5))
+                self.fav_det_att_paned.unbind("<Configure>")
+
+        self.fav_det_att_paned.bind("<Configure>", _set_fav_sash)
 
         # Bottom Large PDF Previewer Pane
         right_bottom = ttk.Frame(right_v_paned)
