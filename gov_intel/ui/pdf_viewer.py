@@ -39,7 +39,7 @@ class PDFViewerWidget(ttk.Frame):
         self.search_matches: list[dict] = []
         self.current_match_idx = -1
         self.drag_start: tuple[float, float] | None = None
-        
+
         # Search Modifiers
         self.use_regex = tk.BooleanVar(value=False)
         self.match_case = tk.BooleanVar(value=False)
@@ -47,6 +47,7 @@ class PDFViewerWidget(ttk.Frame):
         self._build_toolbar_row1()
         self._build_toolbar_row2()
         self._build_canvas_area()
+        self._bind_keyboard_shortcuts()
 
     # -- layout ------------------------------------------------------------
     def _build_toolbar_row1(self) -> None:
@@ -82,7 +83,7 @@ class PDFViewerWidget(ttk.Frame):
         self.e_find = ttk.Entry(tb2, width=16)
         self.e_find.pack(side="left", padx=2)
         self.e_find.bind("<Return>", lambda e: self.perform_in_doc_search(forward=True))
-        
+
         ttk.Checkbutton(tb2, text="Regex", variable=self.use_regex).pack(side="left", padx=2)
         ttk.Checkbutton(tb2, text="Aa", variable=self.match_case).pack(side="left", padx=2)
 
@@ -133,12 +134,16 @@ class PDFViewerWidget(ttk.Frame):
         self.canvas.pack(side="left", fill="both", expand=True)
 
         self.canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind("<Control-MouseWheel>", self._on_ctrl_mousewheel)
         self.canvas.bind("<Button-4>", self._on_mousewheel)
         self.canvas.bind("<Button-5>", self._on_mousewheel)
         self.canvas.bind("<ButtonPress-1>", self._on_drag_start)
         self.canvas.bind("<B1-Motion>", self._on_drag_motion)
         self.canvas.bind("<ButtonRelease-1>", self._on_drag_end)
         self.canvas.bind("<Button-3>", self._on_right_click)
+
+    def _bind_keyboard_shortcuts(self) -> None:
+        self.bind_all("<Control-f>", lambda e: self.e_find.focus_set())
 
     # -- scrolling / rendering ----------------------------------------------
     def _on_mousewheel(self, event: tk.Event) -> None:
@@ -149,17 +154,24 @@ class PDFViewerWidget(ttk.Frame):
         elif event.num == 5:
             self.canvas.yview_scroll(1, "units")
 
+    def _on_ctrl_mousewheel(self, event: tk.Event) -> None:
+        """Zoom in or out using Ctrl + Scroll Wheel."""
+        if event.delta > 0:
+            self._set_zoom(0.1)
+        elif event.delta < 0:
+            self._set_zoom(-0.1)
+
     def load_pdf(self, path: str) -> None:
         self.pdf_path = path
         self.doc_obj = fitz.open(path)
         self.search_matches = []
         self.current_match_idx = -1
-        
+
         # Populate Page Index List
         self.lb_page_index.delete(0, tk.END)
         for i in range(len(self.doc_obj)):
             self.lb_page_index.insert(tk.END, f"Page {i + 1}")
-            
+
         # Populate TOC Tree
         for item in self.toc_tree.get_children():
             self.toc_tree.delete(item)
@@ -172,8 +184,11 @@ class PDFViewerWidget(ttk.Frame):
     def render(self) -> None:
         if not self.doc_obj:
             return
+
         self.canvas.delete("all")
-        self.images, self.page_offsets = [], []
+        self.images.clear()
+        self.page_offsets.clear()
+
         mat = fitz.Matrix(self.zoom, self.zoom)
         y_offset, max_width = 15, 100
 
@@ -182,7 +197,7 @@ class PDFViewerWidget(ttk.Frame):
             pix = page.get_pixmap(matrix=mat)
             img = ImageTk.PhotoImage(Image.open(io.BytesIO(pix.tobytes("ppm"))))
             self.images.append(img)
-            
+
             self.canvas.create_image(15, y_offset, anchor="nw", image=img, tags=("pdf_page", f"p_{page_num}"))
             p_w, p_h = pix.width, pix.height
             max_width = max(max_width, p_w)
@@ -224,7 +239,7 @@ class PDFViewerWidget(ttk.Frame):
             return
         self.search_matches = []
         flags = 0 if self.match_case.get() else fitz.TEXT_DECASE
-        
+
         for p_num in range(len(self.doc_obj)):
             page = self.doc_obj[p_num]
             if self.use_regex.get():
@@ -239,7 +254,7 @@ class PDFViewerWidget(ttk.Frame):
             else:
                 for rect in page.search_for(term, flags=flags):
                     self.search_matches.append({"page_num": p_num, "rect": rect})
-                    
+
         if self.search_matches:
             self.current_match_idx = 0
             self.lbl_search_count.config(text=f"Match 1 of {len(self.search_matches)}")
@@ -258,10 +273,10 @@ class PDFViewerWidget(ttk.Frame):
         m = self.search_matches[self.current_match_idx]
         p_num = m["page_num"]
         rect = m["rect"]
-        
+
         # Scroll to match Y position
         self.scroll_to_page(p_num, rect.y0 * self.zoom)
-        
+
         # Draw visual match box overlay on canvas
         self.canvas.delete("search_match_box")
         p_info = self.page_offsets[p_num]
@@ -269,7 +284,7 @@ class PDFViewerWidget(ttk.Frame):
         box_y0 = p_info["y_start"] + (rect.y0 * self.zoom)
         box_x1 = 15 + (rect.x1 * self.zoom)
         box_y1 = p_info["y_start"] + (rect.y1 * self.zoom)
-        
+
         self.canvas.create_rectangle(
             box_x0, box_y0, box_x1, box_y1,
             outline="#f59e0b", width=3, fill="#fef08a", tags="search_match_box"
@@ -300,10 +315,14 @@ class PDFViewerWidget(ttk.Frame):
             if not (p_info["y_start"] <= sy <= p_info["y_end"]):
                 continue
             page_num = p_info["page_num"]
-            rect = fitz.Rect(
-                (sx - 15) / self.zoom, (sy - p_info["y_start"]) / self.zoom,
-                (canvas_ex - 15) / self.zoom, (canvas_ey - p_info["y_start"]) / self.zoom,
-            )
+
+            # Normalize coordinates to support dragging in any direction
+            x0 = (min(sx, canvas_ex) - 15) / self.zoom
+            y0 = (min(sy, canvas_ey) - p_info["y_start"]) / self.zoom
+            x1 = (max(sx, canvas_ex) - 15) / self.zoom
+            y1 = (max(sy, canvas_ey) - p_info["y_start"]) / self.zoom
+
+            rect = fitz.Rect(x0, y0, x1, y1)
             page = self.doc_obj[page_num]
 
             if self.pen_active.get():
