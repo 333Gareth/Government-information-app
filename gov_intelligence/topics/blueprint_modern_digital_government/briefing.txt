@@ -1,0 +1,85 @@
+🇬🇧 BRIEFING: BLUEPRINT MODERN DIGITAL GOVERNMENT
+TOTAL: 20
+==================================================
+
+📌 [1] A blueprint for modern digital government
+   🔗 Link: https://www.gov.uk/government/publications/a-blueprint-for-modern-digital-government
+   ↳ A long-term vision for digital public services, a 6-point plan for reform, and the role of the new digital centre of government.
+
+📌 [2] GDS Local
+   🔗 Link: https://www.gov.uk/guidance/gds-local
+   ↳ GDS Local strengthens collaboration between central and local government to deliver better, more joined-up digital public services.
+
+📌 [3] Government data maturity hub
+   🔗 Link: https://www.gov.uk/government/collections/data-maturity-assessment-for-government
+   ↳ Data Maturity Assessment and Management for Government supports public sector organisations to measure, improve and maintain the health of their data ecosystems
+
+📌 [4] Algorithmic Transparency Recording Standard Hub
+   🔗 Link: https://www.gov.uk/government/collections/algorithmic-transparency-recording-standard-hub
+   ↳ The Government Digital Service (GDS) is helping public sector organisations provide clear information about how and why they are using algorithmic tools.
+
+📌 [5] Check the MOT history of a vehicle
+   🔗 Link: https://www.gov.uk/check-mot-history
+   ↳ Check the MOT history of a vehicle from 2005 onwards, including if it passed or failed, its mileage and why it failed, download MOT test certificate
+
+📌 [6] HMRC online services: sign in or set up an account
+   🔗 Link: https://www.gov.uk/log-in-register-hmrc-online-services
+   ↳ Sign in or set up a personal or business tax account, Self Assessment, Corporation Tax, PAYE for employers, VAT and other services.
+
+📌 [7] Digital Connectivity Infrastructure Accelerator Competition Winners
+   🔗 Link: https://www.gov.uk/guidance/digital-connectivity-infrastructure-accelerator-competition-winners
+   ↳ This page includes summaries of the winning bids for the Digital Connectivity Infrastructure Accelerator (DCIA) pilots competition
+
+📌 [8] Check if a vehicle is taxed
+   🔗 Link: https://www.gov.uk/check-vehicle-tax
+   ↳ Check and report if a vehicle has up-to-date vehicle tax or is 'off road' (SORN)
+
+📌 [9] About us
+   🔗 Link: https://www.gov.uk/government/organisations/government-digital-service/about
+   ↳ We are the digital centre of government. We serve the public, central government departments and the wider public sector.
+
+📌 [10] eVisas: access and use your online immigration status
+   🔗 Link: https://www.gov.uk/evisa
+   ↳ How to access and use an eVisa: set up a UKVI account, update your details and get a share code to prove your immigration status when you work, rent or travel.
+
+📌 [11] GDS Responsible AI Advisory Panel: Terms of Reference
+   🔗 Link: https://www.gov.uk/government/publications/gds-responsible-ai-advisory-panel-terms-of-reference
+   ↳ Terms of Reference for the Government Digital Service (GDS) Responsible AI Advisory Panel.
+
+📌 [12] Get an electronic travel authorisation (ETA) to visit the UK
+   🔗 Link: https://www.gov.uk/eta
+   ↳ Apply for an ETA to come to the UK if you’re a tourist, visiting family or for certain other reasons for up to 6 months. It costs £20. Find out if you need an ETA or a visa instead.
+
+📌 [13] SLC Annual Business Plan 2025-26
+   🔗 Link: https://www.gov.uk/government/publications/slc-annual-business-plan-2025-26
+   ↳ Business Plan 2025-26
+
+📌 [14] SLC Annual Business Plan 2024-25
+   🔗 Link: https://www.gov.uk/government/publications/slc-annual-business-plan-2024-25
+   ↳ Business Plan 2024-25
+
+📌 [15] Letter to the Prime Minister on improving the nation’s health through primary prevention
+   🔗 Link: https://www.gov.uk/government/publications/letter-to-the-prime-minister-on-improving-the-nations-health-through-primary-prevention
+   ↳ Advice to the Prime Minister on how government can improve the nation’s health through primary prevention.
+
+📌 [16] Digital Assurance Playbook
+   🔗 Link: https://www.gov.uk/government/publications/digital-assurance-playbook
+   ↳ This playbook outlines changes to how the UK government manages digital and technology spending and assurance. The changes come into effect on 1 April 2026.
+
+
+
+📌 [17] DVSA business plan, 2025 to 2026
+   🔗 Link: https://www.gov.uk/government/publications/dvsa-business-plan-2025-to-2026
+   ↳ This report sets out what the Driver and Vehicle Standards Agency (DVSA) plans to do between April 2025 and March 2026.
+
+📌 [18] Defence Minister Lord Coaker, keynote speech at Enterprise Gateway, Farnborough International Airshow.
+   🔗 Link: https://www.gov.uk/government/speeches/defence-minister-lord-coaker-keynote-speech-at-enterprise-gateway-farnborough-international-airshow
+   ↳ The Enterprise Gateway: Opening Address 
+
+📌 [19] Government Commercial Function Annual Report 2024-2025
+   🔗 Link: https://www.gov.uk/government/publications/government-commercial-function-annual-report-2024-2025
+   ↳ The Government Commercial Function has published its Annual Report for 2024-2025
+
+📌 [20] Celebrating smarter working success across the public sector
+   🔗 Link: https://www.gov.uk/government/news/celebrating-smarter-working-success-across-the-public-sector
+   ↳ The Government Property Agency recently hosted the fourth Smarter Working Live Awards, celebrating outstanding smarter working across the public sector.

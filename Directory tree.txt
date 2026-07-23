@@ -1,0 +1,13 @@
+GOV.UK information app/
+│
+├── main.py
+└── gov_intel/
+    ├── __init__.py
+    ├── ui/
+    │   ├── app.py
+    │   ├── pdf_viewer.py
+    │   └── data_grid.py
+    ├── api/
+    │   └── harvester.py
+    └── utils/
+        └── persistence.py
