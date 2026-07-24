@@ -515,7 +515,6 @@ class GovApp:
         f = ttk.Frame(self.tab_kw, padding=10)
         f.pack(fill="both", expand=True)
 
-        # Preset Policy Selector Bar
         preset_bar = ttk.LabelFrame(f, text=" 📦 Load Policy Research Presets ", padding=8)
         preset_bar.pack(fill="x", side="top", pady=(0, 8))
 
@@ -659,9 +658,15 @@ class GovApp:
         f.pack(fill="both", expand=True)
         columns = ["title"] + list(self.state.keyword_rules.keys())
         self.analytics_tree = ttk.Treeview(f, columns=columns, show="headings")
+
         for col in columns:
-            self.analytics_tree.heading(col, text=col)
-            self.analytics_tree.column(col, width=140 if col != "title" else 320, anchor="w")
+            is_title = (col == "title")
+            col_heading = "Document Title" if is_title else col
+            alignment = "w" if is_title else "center"
+
+            self.analytics_tree.heading(col, text=col_heading, anchor=alignment)
+            self.analytics_tree.column(col, width=320 if is_title else 140, anchor=alignment)
+
         self.analytics_tree.pack(fill="both", expand=True)
         self.analytics_tree.bind("<Double-1>", self.on_analytics_doc_double_click)
 
