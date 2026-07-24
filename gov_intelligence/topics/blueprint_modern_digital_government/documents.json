@@ -373,6 +373,21 @@
     ]
   },
   {
+    "id": "1c90cfabe61adc5b",
+    "title": "Defence Minister Lord Coaker, keynote speech at Enterprise Gateway, Farnborough International Airshow.",
+    "description": "The Enterprise Gateway: Opening Address ",
+    "url": "https://www.gov.uk/government/speeches/defence-minister-lord-coaker-keynote-speech-at-enterprise-gateway-farnborough-international-airshow",
+    "date": "2026-07-21",
+    "topic": "blueprint modern digital government",
+    "attachments": [
+      "https://www.gov.uk/government/2026-burnham-labour-government",
+      "https://www.gov.uk/government/organisations/ministry-of-defence",
+      "https://www.gov.uk/government/people/lord-coaker",
+      "https://www.gov.uk/government/ministers/minister-of-state--190",
+      "https://www.gov.uk/defence/working-armed-forces"
+    ]
+  },
+  {
     "id": "6789536083361efd",
     "title": "DVSA business plan, 2025 to 2026",
     "description": "This report sets out what the Driver and Vehicle Standards Agency (DVSA) plans to do between April 2025 and March 2026.",
@@ -386,21 +401,6 @@
       "https://www.gov.uk/government/2024-starmer-labour-government",
       "https://www.gov.uk/government/organisations/driver-and-vehicle-standards-agency",
       "https://www.gov.uk/transport/corporate-and-operational-information-transport"
-    ]
-  },
-  {
-    "id": "1c90cfabe61adc5b",
-    "title": "Defence Minister Lord Coaker, keynote speech at Enterprise Gateway, Farnborough International Airshow.",
-    "description": "The Enterprise Gateway: Opening Address ",
-    "url": "https://www.gov.uk/government/speeches/defence-minister-lord-coaker-keynote-speech-at-enterprise-gateway-farnborough-international-airshow",
-    "date": "2026-07-21",
-    "topic": "blueprint modern digital government",
-    "attachments": [
-      "https://www.gov.uk/government/2026-burnham-labour-government",
-      "https://www.gov.uk/government/organisations/ministry-of-defence",
-      "https://www.gov.uk/government/people/lord-coaker",
-      "https://www.gov.uk/government/ministers/minister-of-state--190",
-      "https://www.gov.uk/defence/working-armed-forces"
     ]
   },
   {
@@ -419,16 +419,20 @@
     ]
   },
   {
-    "id": "edc4a2666cb5f328",
-    "title": "Celebrating smarter working success across the public sector",
-    "description": "The Government Property Agency recently hosted the fourth Smarter Working Live Awards, celebrating outstanding smarter working across the public sector.",
-    "url": "https://www.gov.uk/government/news/celebrating-smarter-working-success-across-the-public-sector",
-    "date": "2024-12-02",
+    "id": "a5a697858d7da33c",
+    "title": "Photonics: capturing the opportunities for growth and global leadership",
+    "description": "Advice to the Prime Minister on how the UK can achieve growth and global leadership in the photonics sector.",
+    "url": "https://www.gov.uk/government/publications/photonics-capturing-the-opportunities-for-growth-and-global-leadership",
+    "date": "2026-03-09",
     "topic": "blueprint modern digital government",
     "attachments": [
-      "https://www.gov.uk/government/organisations/government-property-agency",
+      "https://www.gov.uk/government/publications/photonics-capturing-the-opportunities-for-growth-and-global-leadership/cst-advice-on-growth-and-global-leadership-in-photonics",
+      "https://assets.publishing.service.gov.uk/media/69a6f40cb9bd90e63a252229/CST_advice_on_growth_and_global_leadership_in_photonics.pdf",
+      "https://assets.publishing.service.gov.uk/media/69a6f490a2495f2d259f13c6/Evidence_pack_provided_by_the_Photonics_Leadership_Group.pptx",
+      "https://www.gov.uk/government/collections/reports-on-science-and-technology",
       "https://www.gov.uk/government/2024-starmer-labour-government",
-      "https://www.gov.uk/work"
+      "https://www.gov.uk/government/organisations/council-for-science-and-technology",
+      "https://www.gov.uk/business-and-industry/science-and-innovation"
     ]
   }
 ]

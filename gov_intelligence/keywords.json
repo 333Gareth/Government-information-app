@@ -1,0 +1,120 @@
+{
+  "Mandates & Legal 🟥": {
+    "color": [
+      1,
+      0.2,
+      0.2
+    ],
+    "terms": {
+      "must": true,
+      "shall": true,
+      "prohibited": true,
+      "illegal": true,
+      "enforcement": true,
+      "penalty": true,
+      "mandate": true,
+      "required": true
+    }
+  },
+  "Financial & Budget 🟩": {
+    "color": [
+      0.2,
+      0.9,
+      0.2
+    ],
+    "terms": {
+      "budget": true,
+      "funding": true,
+      "allocation": true,
+      "expenditure": true,
+      "grant": true,
+      "investment": true,
+      "cost": true
+    }
+  },
+  "Deadlines & Timelines 🟦": {
+    "color": [
+      0.3,
+      0.6,
+      1
+    ],
+    "terms": {
+      "deadline": true,
+      "expires": true,
+      "timeline": true,
+      "target date": true,
+      "milestone": true,
+      "effective date": true
+    }
+  },
+  "Strategic Focus 🟨": {
+    "color": [
+      1,
+      0.9,
+      0.2
+    ],
+    "terms": {
+      "blueprint": true,
+      "priority": true,
+      "key objective": true,
+      "reform": true,
+      "standard": true,
+      "strategy": true,
+      "framework": true
+    }
+  },
+  "Technology & Cyber": {
+    "color": [
+      0.2,
+      0.6,
+      1.0
+    ],
+    "terms": {
+      "data*": true,
+      "cyber": true,
+      "cloud": true,
+      "api": true,
+      "artificial intelligence": true
+    }
+  },
+  "Procurement & Vendors": {
+    "color": [
+      0.8,
+      0.3,
+      0.9
+    ],
+    "terms": {
+      "supplier": true,
+      "vendor": true,
+      "contract*": true,
+      "tender": true
+    }
+  },
+  "Legal & Statutory": {
+    "color": [
+      1,
+      0.2,
+      0.2
+    ],
+    "terms": {
+      "statutory": true,
+      "act": true,
+      "clause": true,
+      "compliance": true,
+      "regulation*": true
+    }
+  },
+  "Enforcement & Risks": {
+    "color": [
+      0.9,
+      0.4,
+      0.1
+    ],
+    "terms": {
+      "penalty": true,
+      "offence": true,
+      "breach*": true,
+      "liability": true
+    }
+  }
+}

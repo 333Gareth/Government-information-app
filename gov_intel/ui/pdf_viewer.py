@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fnmatch
 import io
 import re
 import tkinter as tk
@@ -39,6 +40,7 @@ class PDFViewerWidget(ttk.Frame):
         self.search_matches: list[dict] = []
         self.current_match_idx = -1
         self.drag_start: tuple[float, float] | None = None
+        self.auto_highlights_index: list[dict] = []
 
         # Search Modifiers
         self.use_regex = tk.BooleanVar(value=False)
@@ -49,7 +51,6 @@ class PDFViewerWidget(ttk.Frame):
         self._build_canvas_area()
         self._bind_keyboard_shortcuts()
 
-    # -- layout ------------------------------------------------------------
     def _build_toolbar_row1(self) -> None:
         tb1 = ttk.Frame(self, padding=4)
         tb1.pack(fill="x", side="top")
@@ -93,7 +94,6 @@ class PDFViewerWidget(ttk.Frame):
         self.lbl_search_count = ttk.Label(tb2, text="")
         self.lbl_search_count.pack(side="left", padx=6)
 
-        # Contextual Action Bar on the right
         ttk.Button(tb2, text="📌 Copy w/ Ref", command=self.copy_selected_text_with_ref).pack(side="right", padx=2)
         ttk.Button(tb2, text="📋 Copy", command=self.copy_selected_text_to_clipboard).pack(side="right", padx=2)
         self.lbl_selection_status = ttk.Label(tb2, text="", font=("Segoe UI", 8, "italic"))
@@ -103,11 +103,11 @@ class PDFViewerWidget(ttk.Frame):
         body = ttk.Frame(self)
         body.pack(fill="both", expand=True)
 
-        # Notebook Sidebar for Page List + Document TOC
-        self.sidebar_nb = ttk.Notebook(body, width=160)
+        # 3-Tab Sidebar: Pages, Outline, Highlights
+        self.sidebar_nb = ttk.Notebook(body, width=190)
         self.sidebar_nb.pack(side="left", fill="y")
 
-        # Tab 1: Pages List
+        # Tab 1: Pages
         f_pages = ttk.Frame(self.sidebar_nb)
         self.sidebar_nb.add(f_pages, text="Pages")
         self.lb_page_index = tk.Listbox(f_pages, bg="#ffffff", exportselection=False)
@@ -120,6 +120,13 @@ class PDFViewerWidget(ttk.Frame):
         self.toc_tree = ttk.Treeview(f_toc, show="tree", selectmode="browse")
         self.toc_tree.pack(fill="both", expand=True)
         self.toc_tree.bind("<<TreeviewSelect>>", self._on_toc_select)
+
+        # Tab 3: Highlights Navigation
+        f_hl = ttk.Frame(self.sidebar_nb)
+        self.sidebar_nb.add(f_hl, text="Highlights")
+        self.lb_highlights = tk.Listbox(f_hl, bg="#fef08a", exportselection=False, font=("Segoe UI", 9))
+        self.lb_highlights.pack(fill="both", expand=True)
+        self.lb_highlights.bind("<<ListboxSelect>>", self._on_highlight_item_select)
 
         canvas_frame = ttk.Frame(body)
         canvas_frame.pack(side="left", fill="both", expand=True)
@@ -145,7 +152,6 @@ class PDFViewerWidget(ttk.Frame):
     def _bind_keyboard_shortcuts(self) -> None:
         self.bind_all("<Control-f>", lambda e: self.e_find.focus_set())
 
-    # -- scrolling / rendering ----------------------------------------------
     def _on_mousewheel(self, event: tk.Event) -> None:
         if event.delta:
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -155,7 +161,6 @@ class PDFViewerWidget(ttk.Frame):
             self.canvas.yview_scroll(1, "units")
 
     def _on_ctrl_mousewheel(self, event: tk.Event) -> None:
-        """Zoom in or out using Ctrl + Scroll Wheel."""
         if event.delta > 0:
             self._set_zoom(0.1)
         elif event.delta < 0:
@@ -166,17 +171,17 @@ class PDFViewerWidget(ttk.Frame):
         self.doc_obj = fitz.open(path)
         self.search_matches = []
         self.current_match_idx = -1
+        self.auto_highlights_index = []
+        self.lb_highlights.delete(0, tk.END)
 
-        # Populate Page Index List
         self.lb_page_index.delete(0, tk.END)
         for i in range(len(self.doc_obj)):
             self.lb_page_index.insert(tk.END, f"Page {i + 1}")
 
-        # Populate TOC Tree
         for item in self.toc_tree.get_children():
             self.toc_tree.delete(item)
         toc = self.doc_obj.get_toc()
-        for lvl, title, page_no in toc:
+        for _lvl, title, page_no in toc:
             self.toc_tree.insert("", "end", iid=f"page_{page_no}", text=f"{title} (p.{page_no})")
 
         self.render()
@@ -224,6 +229,13 @@ class PDFViewerWidget(ttk.Frame):
             if p_str.isdigit():
                 self.scroll_to_page(int(p_str) - 1)
 
+    def _on_highlight_item_select(self, _event: tk.Event) -> None:
+        sel = self.lb_highlights.curselection()
+        if sel and self.auto_highlights_index:
+            idx = sel[0]
+            item = self.auto_highlights_index[idx]
+            self.scroll_to_page(item["page_num"], item["y_offset"] * self.zoom)
+
     def scroll_to_page(self, page_num: int, y_offset_within_page: float = 0) -> None:
         if not (0 <= page_num < len(self.page_offsets)):
             return
@@ -232,7 +244,6 @@ class PDFViewerWidget(ttk.Frame):
         if total_h > 0:
             self.canvas.yview_moveto(y_pos / total_h)
 
-    # -- search --------------------------------------------------------------
     def perform_in_doc_search(self, forward: bool = True) -> None:
         term = self.e_find.get().strip()
         if not term or not self.doc_obj:
@@ -274,10 +285,8 @@ class PDFViewerWidget(ttk.Frame):
         p_num = m["page_num"]
         rect = m["rect"]
 
-        # Scroll to match Y position
         self.scroll_to_page(p_num, rect.y0 * self.zoom)
 
-        # Draw visual match box overlay on canvas
         self.canvas.delete("search_match_box")
         p_info = self.page_offsets[p_num]
         box_x0 = 15 + (rect.x0 * self.zoom)
@@ -290,7 +299,6 @@ class PDFViewerWidget(ttk.Frame):
             outline="#f59e0b", width=3, fill="#fef08a", tags="search_match_box"
         )
 
-    # -- selection / highlighting / notes --------------------------------------
     def _on_drag_start(self, event: tk.Event) -> None:
         self.canvas.delete("selection_box")
         self.drag_start = (self.canvas.canvasx(event.x), self.canvas.canvasy(event.y))
@@ -316,7 +324,6 @@ class PDFViewerWidget(ttk.Frame):
                 continue
             page_num = p_info["page_num"]
 
-            # Normalize coordinates to support dragging in any direction
             x0 = (min(sx, canvas_ex) - 15) / self.zoom
             y0 = (min(sy, canvas_ey) - p_info["y_start"]) / self.zoom
             x1 = (max(sx, canvas_ex) - 15) / self.zoom
@@ -400,24 +407,59 @@ class PDFViewerWidget(ttk.Frame):
     def auto_highlight(self) -> None:
         if not self.doc_obj:
             return
-        rules, count = self.get_kw_rules_cb(), 0
-        for page in self.doc_obj:
+        rules = self.get_kw_rules_cb()
+        count = 0
+        self.auto_highlights_index = []
+        self.lb_highlights.delete(0, tk.END)
+
+        for p_num in range(len(self.doc_obj)):
+            page = self.doc_obj[p_num]
             sentences = re.split(r"(?<!\w\.\w.)(?<=\.|\?)\s", page.get_text("text"))
             for s in sentences:
                 clean_s = s.strip().replace("\n", " ")
-                if len(clean_s) < 20:
+                if len(clean_s) < 15:
                     continue
-                for _cat, data in rules.items():
+                lower_s = clean_s.lower()
+
+                for cat, data in rules.items():
                     active_terms = [t for t, enabled in data.get("terms", {}).items() if enabled]
-                    if not any(t in clean_s.lower() for t in active_terms):
+                    if not active_terms:
                         continue
-                    for inst in page.search_for(s.strip()):
+
+                    # Check for wildcard patterns or direct substrings
+                    matched_term = None
+                    for t in active_terms:
+                        if "*" in t or "?" in t:
+                            words = lower_s.split()
+                            if any(fnmatch.fnmatch(w, t) for w in words):
+                                matched_term = t
+                                break
+                        elif t in lower_s:
+                            matched_term = t
+                            break
+
+                    if not matched_term:
+                        continue
+
+                    rects = page.search_for(s.strip())
+                    for inst in rects:
                         annot = page.add_highlight_annot(inst)
                         annot.set_colors(stroke=tuple(data["color"]))
                         annot.update()
                         count += 1
+
+                    if rects:
+                        snippet_label = f"P.{p_num + 1} [{cat[:10]}] {clean_s[:30]}..."
+                        self.lb_highlights.insert(tk.END, snippet_label)
+                        self.auto_highlights_index.append({
+                            "page_num": p_num,
+                            "y_offset": rects[0].y0,
+                            "text": clean_s,
+                        })
+
         if count > 0:
             self.render()
+            self.sidebar_nb.select(2)  # Switch sidebar tab to "Highlights"
         messagebox.showinfo("Auto Highlight", f"Applied {count} highlights across the PDF!")
 
     def save_pdf(self) -> None:

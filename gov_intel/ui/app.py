@@ -1,9 +1,4 @@
-"""The main GOV.UK Policy Intelligence Workstation window.
-
-Threading rules followed throughout this module:
-* Background threads NEVER touch Tkinter widgets directly.
-* ``self.log(...)`` schedules widget updates on the main thread.
-"""
+"""The main GOV.UK Policy Intelligence Workstation window."""
 
 from __future__ import annotations
 
@@ -16,10 +11,10 @@ from pathlib import Path
 
 import requests
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
+from tkinter import colorchooser, filedialog, messagebox, scrolledtext, simpledialog, ttk
 
 from .. import archive, config
-from ..app_state import AppState
+from ..app_state import PRESET_POLICY_TEMPLATES, AppState
 from ..gov_api import classify_attachment_url, deep_harvest_gov_uk, sanitize_filename
 from ..models import Document
 from .data_grid import DataGridViewerWindow
@@ -214,7 +209,6 @@ class GovApp:
         main_paned = ttk.Panedwindow(self.tab_reader, orient="horizontal")
         main_paned.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Left Column: Discovered Sources
         left = ttk.LabelFrame(main_paned, text=" Discovered Sources ", padding=8)
         main_paned.add(left, weight=1)
 
@@ -227,11 +221,9 @@ class GovApp:
         self.lb_docs.bind("<<ListboxSelect>>", self.on_doc_select)
         self.lb_docs.bind("<Double-1>", self.on_doc_double_click)
 
-        # Right Column: Draggable Vertical Panes
         right_v_paned = ttk.Panedwindow(main_paned, orient="vertical")
         main_paned.add(right_v_paned, weight=4)
 
-        # TOP PANE: Document Details & Attachments Splitter
         right_top_frame = ttk.LabelFrame(right_v_paned, text=" Document Metadata & Attachments ", padding=6)
         right_v_paned.add(right_top_frame, weight=1)
 
@@ -242,17 +234,14 @@ class GovApp:
         ttk.Button(btn_row, text="🏷️ Set Tag", command=self.apply_custom_doc_tag).pack(side="left", padx=2)
         ttk.Button(btn_row, text="📋 Copy Citation", command=self.copy_citation_popup).pack(side="left", padx=2)
 
-        # Explicit Horizontal Splitter for Details vs Attachments
         self.reader_details_att_paned = ttk.Panedwindow(right_top_frame, orient="horizontal")
         self.reader_details_att_paned.pack(fill="both", expand=True)
 
-        # Text Details Box (Left 50%)
         details_box_frame = ttk.Frame(self.reader_details_att_paned)
         self.reader_details_att_paned.add(details_box_frame, weight=1)
         self.txt_details = scrolledtext.ScrolledText(details_box_frame, height=4, wrap="word")
         self.txt_details.pack(fill="both", expand=True)
 
-        # Attachments Panel (Right 50%)
         att_box_frame = ttk.LabelFrame(self.reader_details_att_paned, text=" Attachments ", padding=4)
         self.reader_details_att_paned.add(att_box_frame, weight=1)
 
@@ -263,7 +252,6 @@ class GovApp:
         self.lb_atts.pack(side="left", fill="both", expand=True)
         self.lb_atts.bind("<Double-1>", self.on_attachment_open)
 
-        # Force initial 50/50 sash placement on first render
         def _set_reader_sash(event):
             w = event.width
             if w > 100:
@@ -272,7 +260,6 @@ class GovApp:
 
         self.reader_details_att_paned.bind("<Configure>", _set_reader_sash)
 
-        # BOTTOM PANE: Document Viewer
         right_bottom_frame = ttk.Frame(right_v_paned)
         right_v_paned.add(right_bottom_frame, weight=5)
 
@@ -414,7 +401,6 @@ class GovApp:
         main_paned = ttk.Panedwindow(self.tab_favs, orient="horizontal")
         main_paned.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Left Pane: Starred Sources List
         left = ttk.LabelFrame(main_paned, text=" ⭐ Starred Sources ", padding=8)
         main_paned.add(left, weight=1)
         self.lb_favs = tk.Listbox(left, exportselection=False)
@@ -422,14 +408,12 @@ class GovApp:
         self.lb_favs.bind("<<ListboxSelect>>", self.on_fav_select)
         self.lb_favs.bind("<Double-1>", self.on_fav_double_click)
 
-        # Right Vertical Pane
         right_v_paned = ttk.Panedwindow(main_paned, orient="vertical")
         main_paned.add(right_v_paned, weight=4)
 
         right_top = ttk.LabelFrame(right_v_paned, text=" Source Metadata & Assets ", padding=6)
         right_v_paned.add(right_top, weight=1)
 
-        # Explicit Horizontal Splitter
         self.fav_det_att_paned = ttk.Panedwindow(right_top, orient="horizontal")
         self.fav_det_att_paned.pack(fill="both", expand=True)
 
@@ -448,7 +432,6 @@ class GovApp:
         self.lb_fav_atts.pack(side="left", fill="both", expand=True)
         self.lb_fav_atts.bind("<Double-1>", self.on_fav_att_open)
 
-        # Force initial 50/50 sash placement on first render
         def _set_fav_sash(event):
             w = event.width
             if w > 100:
@@ -457,7 +440,6 @@ class GovApp:
 
         self.fav_det_att_paned.bind("<Configure>", _set_fav_sash)
 
-        # Bottom Large PDF Previewer Pane
         right_bottom = ttk.Frame(right_v_paned)
         right_v_paned.add(right_bottom, weight=5)
 
@@ -533,10 +515,30 @@ class GovApp:
         f = ttk.Frame(self.tab_kw, padding=10)
         f.pack(fill="both", expand=True)
 
-        left = ttk.LabelFrame(f, text=" Categories ", padding=8)
+        # Preset Policy Selector Bar
+        preset_bar = ttk.LabelFrame(f, text=" 📦 Load Policy Research Presets ", padding=8)
+        preset_bar.pack(fill="x", side="top", pady=(0, 8))
+
+        ttk.Label(preset_bar, text="Template:").pack(side="left", padx=(4, 2))
+        self.cb_kw_presets = ttk.Combobox(
+            preset_bar,
+            values=list(PRESET_POLICY_TEMPLATES.keys()),
+            state="readonly",
+            width=35,
+        )
+        self.cb_kw_presets.pack(side="left", padx=4)
+        if PRESET_POLICY_TEMPLATES:
+            self.cb_kw_presets.set(list(PRESET_POLICY_TEMPLATES.keys())[0])
+
+        ttk.Button(preset_bar, text="📥 Load Preset Categories", command=self.load_kw_preset).pack(side="left", padx=6)
+
+        body = ttk.Frame(f)
+        body.pack(fill="both", expand=True)
+
+        left = ttk.LabelFrame(body, text=" Categories ", padding=8)
         left.pack(side="left", fill="y", padx=(0, 8))
         self.lb_kw_cats = tk.Listbox(left, exportselection=False, width=28)
-        self.lb_kw_cats.pack(fill="y", expand=True)
+        self.lb_kw_cats.pack(fill="both", expand=True)
         self.lb_kw_cats.bind("<<ListboxSelect>>", self.on_kw_cat_select)
 
         cat_row = ttk.Frame(left)
@@ -544,9 +546,10 @@ class GovApp:
         self.e_new_cat = ttk.Entry(cat_row)
         self.e_new_cat.pack(side="left", fill="x", expand=True)
         ttk.Button(cat_row, text="➕", width=3, command=self.add_kw_category).pack(side="left")
+        ttk.Button(cat_row, text="🎨", width=3, command=self.pick_kw_category_color).pack(side="left", padx=2)
         ttk.Button(cat_row, text="🗑️", width=3, command=self.remove_kw_category).pack(side="left")
 
-        right = ttk.LabelFrame(f, text=" Terms ", padding=8)
+        right = ttk.LabelFrame(body, text=" Terms (Supports Wildcards like 'grant*') ", padding=8)
         right.pack(side="left", fill="both", expand=True)
         self.lb_kw_terms = tk.Listbox(right, exportselection=False)
         self.lb_kw_terms.pack(fill="both", expand=True)
@@ -561,6 +564,12 @@ class GovApp:
 
         self.refresh_kw_categories_list()
 
+    def load_kw_preset(self) -> None:
+        preset_key = self.cb_kw_presets.get()
+        if self.state.apply_preset_template(preset_key):
+            self.refresh_kw_categories_list()
+            messagebox.showinfo("Preset Loaded", f"Loaded preset rules for '{preset_key}'!")
+
     def refresh_kw_categories_list(self) -> None:
         self.lb_kw_cats.delete(0, tk.END)
         for cat in self.state.keyword_rules:
@@ -573,6 +582,19 @@ class GovApp:
         if self.state.add_keyword_category(self.e_new_cat.get()):
             self.e_new_cat.delete(0, tk.END)
             self.refresh_kw_categories_list()
+
+    def pick_kw_category_color(self) -> None:
+        sel = self.lb_kw_cats.curselection()
+        if not sel:
+            return
+        cat = self.lb_kw_cats.get(sel[0])
+        curr_rgb = self.state.keyword_rules.get(cat, {}).get("color", [1.0, 0.8, 0.0])
+        hex_col = f"#{int(curr_rgb[0]*255):02x}{int(curr_rgb[1]*255):02x}{int(curr_rgb[2]*255):02x}"
+        color_rgb, color_hex = colorchooser.askcolor(initialcolor=hex_col, title=f"Choose Highlight Color for '{cat}'")
+        if color_rgb:
+            norm_color = [round(c / 255.0, 2) for c in color_rgb]
+            self.state.set_category_color(cat, norm_color)
+            messagebox.showinfo("Color Updated", f"Set color for category '{cat}'!")
 
     def remove_kw_category(self) -> None:
         sel = self.lb_kw_cats.curselection()

@@ -1,6 +1,12 @@
 [
   {
     "query": "blueprint modern digital government",
+    "timestamp": "2026-07-24 10:40",
+    "dept": "All Departments",
+    "type": "All Types"
+  },
+  {
+    "query": "blueprint modern digital government",
     "timestamp": "2026-07-24 00:01",
     "dept": "All Departments",
     "type": "All Types"
