@@ -1,0 +1,25 @@
+{
+  "profile_name": "🛡️ Governance & Security",
+  "rules": {
+    "Governance & Security": {
+      "color": [1.0, 0.35, 0.35],
+      "terms": {
+        "7 principles of public life": true,
+        "opportunities": true,
+        "opportunity": true,
+        "warfare": true,
+        "private sector investment": true,
+        "war": true,
+        "statutory": true,
+        "act": true,
+        "clause": true,
+        "compliance": true,
+        "regulation*": true,
+        "penalty": true,
+        "offence": true,
+        "breach*": true,
+        "liability": true
+      }
+    }
+  }
+}

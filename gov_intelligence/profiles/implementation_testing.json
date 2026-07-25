@@ -1,0 +1,17 @@
+{
+  "profile_name": "⚙️ Implementation & Testing",
+  "rules": {
+    "Implementation & Testing": {
+      "color": [0.3, 0.85, 0.4],
+      "terms": {
+        "tests": true,
+        "trial": true,
+        "infrastructure": true,
+        "digital infrastructure": true,
+        "structural": true,
+        "analytics": true,
+        "intelligence": true
+      }
+    }
+  }
+}

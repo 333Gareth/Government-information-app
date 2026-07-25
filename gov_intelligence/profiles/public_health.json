@@ -1,0 +1,25 @@
+{
+  "profile_name": "🏥 Public Health & NHS Reform",
+  "rules": {
+    "Healthcare Delivery": {
+      "color": [0.2, 0.8, 0.8],
+      "terms": {
+        "nhs trust": true,
+        "patient care": true,
+        "clinical trial*": true,
+        "hospital admission*": true,
+        "general practice": true
+      }
+    },
+    "Funding & Workforce": {
+      "color": [1.0, 0.6, 0.2],
+      "terms": {
+        "workforce shortage": true,
+        "health budget": true,
+        "recruitment": true,
+        "nurse*": true,
+        "doctor*": true
+      }
+    }
+  }
+}

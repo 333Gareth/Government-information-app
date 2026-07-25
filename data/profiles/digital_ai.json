@@ -1,0 +1,26 @@
+{
+  "profile_name": "🤖 AI & Digital Government",
+  "rules": {
+    "Artificial Intelligence": {
+      "color": [0.3, 0.65, 1.0],
+      "terms": {
+        "artificial intelligence": true,
+        "machine learning": true,
+        "algorithm*": true,
+        "large language model*": true,
+        "automation": true,
+        "data governance": true
+      }
+    },
+    "Cybersecurity & Cloud": {
+      "color": [1.0, 0.35, 0.35],
+      "terms": {
+        "cybersecurity": true,
+        "cloud computing": true,
+        "encryption": true,
+        "vulnerability": true,
+        "zero trust": true
+      }
+    }
+  }
+}

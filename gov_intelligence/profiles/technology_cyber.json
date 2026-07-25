@@ -1,0 +1,21 @@
+{
+  "profile_name": "💻 Technology & Cyber",
+  "rules": {
+    "Technology & Cyber": {
+      "color": [0.3, 0.65, 1.0],
+      "terms": {
+        "data*": true,
+        "cyber": true,
+        "cloud": true,
+        "api": true,
+        "artificial intelligence": true,
+        "machine learning": true,
+        "algorithm*": true,
+        "supplier": true,
+        "vendor": true,
+        "contract*": true,
+        "tender": true
+      }
+    }
+  }
+}

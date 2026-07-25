@@ -66,16 +66,16 @@ class Document:
         )
 
 
-def normalize_keyword_rules(data: dict) -> dict:
-    """Upgrade legacy list-based ``terms`` (old format) to the dict format.
-
-    Older keyword-brain files stored terms as a list of strings; the
-    current format stores them as ``{term: enabled_bool}`` so individual
-    terms can be toggled on/off. This makes loading old files a no-op
-    instead of a crash.
-    """
-    for cat, payload in data.items():
-        terms = payload.get("terms")
-        if isinstance(terms, list):
-            payload["terms"] = {t: True for t in terms}
-    return data
+def normalize_keyword_rules(raw: dict) -> dict:
+    """Normalizes raw dictionary input into a consistent keyword rule structure."""
+    normalized = {}
+    for cat, data in raw.items():
+        if isinstance(data, dict):
+            color = data.get("color", [1.0, 0.8, 0.0])
+            terms = data.get("terms", {})
+            if isinstance(terms, list):
+                terms = {t: True for t in terms}
+            normalized[cat] = {"color": color, "terms": terms}
+        elif isinstance(data, list):
+            normalized[cat] = {"color": [1.0, 0.8, 0.0], "terms": {t: True for t in data}}
+    return normalized

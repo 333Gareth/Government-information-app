@@ -1,0 +1,18 @@
+{
+  "profile_name": "🎯 Strategic & Planning",
+  "rules": {
+    "Strategic & Planning": {
+      "color": [1.0, 0.9, 0.2],
+      "terms": {
+        "blueprint": true,
+        "priority": true,
+        "key objective": true,
+        "reform": true,
+        "standard": true,
+        "strategy": true,
+        "framework": true,
+        "roadmap": true
+      }
+    }
+  }
+}

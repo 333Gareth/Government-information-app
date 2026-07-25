@@ -114,6 +114,24 @@
     ]
   },
   {
+    "id": "c402d4af6d53e9c0",
+    "title": "Precision bred organism marketing notice (reference: PBM/25/SOTU/002)",
+    "description": "Information on a precision breeding marketing notice submitted for potato plants and their precision bred status.",
+    "url": "https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25sotu002",
+    "date": "2026-07-03",
+    "topic": "Precision bred",
+    "attachments": [
+      "https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25sotu002/precision-bred-organism-marketing-notice-reference-pbm25sotu002",
+      "https://assets.publishing.service.gov.uk/media/6a466e4b8effd97622f53b8a/Responses_to_information_notices_issued_by_ACRE.pdf",
+      "https://assets.publishing.service.gov.uk/media/6a45312e045e1108aaa5e903/Precision_bred_confirmation_letter_-_PBM-25-SOTU-002.pdf",
+      "https://assets.publishing.service.gov.uk/media/6a58c78e5ca06bf11ccb42e8/ACRE_advice_on_precision_breeding_marketing_notice_PBM-25-SOTU-002.pdf",
+      "https://www.gov.uk/government/collections/precision-breeding-register-notices-and-decisions",
+      "https://www.gov.uk/government/2024-starmer-labour-government",
+      "https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs",
+      "https://www.gov.uk/environment/food-and-farming-industry"
+    ]
+  },
+  {
     "id": "e74edb09a0a5aa05",
     "title": "Precision bred organism release notice (reference: PBR/26/005)",
     "description": "Details of a notification to release a precision bred tomato plant in England.",
@@ -178,21 +196,18 @@
     ]
   },
   {
-    "id": "c402d4af6d53e9c0",
-    "title": "Precision bred organism marketing notice (reference: PBM/25/SOTU/002)",
-    "description": "Information on a precision breeding marketing notice submitted for potato plants and their precision bred status.",
-    "url": "https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25sotu002",
-    "date": "2026-07-03",
+    "id": "f4a952028e3a287e",
+    "title": "Precision bred organism release notice (reference: PBR/26/002)",
+    "description": "Details of a notification to release a precision bred pea plant in England.",
+    "url": "https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26002",
+    "date": "2026-03-06",
     "topic": "Precision bred",
     "attachments": [
-      "https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25sotu002/precision-bred-organism-marketing-notice-reference-pbm25sotu002",
-      "https://assets.publishing.service.gov.uk/media/6a466e4b8effd97622f53b8a/Responses_to_information_notices_issued_by_ACRE.pdf",
-      "https://assets.publishing.service.gov.uk/media/6a45312e045e1108aaa5e903/Precision_bred_confirmation_letter_-_PBM-25-SOTU-002.pdf",
-      "https://assets.publishing.service.gov.uk/media/6a58c78e5ca06bf11ccb42e8/ACRE_advice_on_precision_breeding_marketing_notice_PBM-25-SOTU-002.pdf",
+      "https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26002/precision-bred-organism-release-notice-reference-pbr26002",
       "https://www.gov.uk/government/collections/precision-breeding-register-notices-and-decisions",
       "https://www.gov.uk/government/2024-starmer-labour-government",
       "https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs",
-      "https://www.gov.uk/environment/food-and-farming-industry"
+      "https://www.gov.uk/environment/animal-and-plant-health"
     ]
   },
   {
@@ -246,18 +261,19 @@
     ]
   },
   {
-    "id": "f4a952028e3a287e",
-    "title": "Precision bred organism release notice (reference: PBR/26/002)",
-    "description": "Details of a notification to release a precision bred pea plant in England.",
-    "url": "https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26002",
-    "date": "2026-03-06",
+    "id": "7eabfc327302df55",
+    "title": "Precision bred organisms (PBO) January 2023 statement",
+    "description": "Statement from the Advisory Committee on Novel Foods and Processes (ACNFP) on the safety assessment and regulation of precision bred organisms (PBOs).",
+    "url": "https://www.gov.uk/government/publications/precision-bred-organisms-pbo-january-2023-statement",
+    "date": "2023-07-30",
     "topic": "Precision bred",
     "attachments": [
-      "https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26002/precision-bred-organism-release-notice-reference-pbr26002",
-      "https://www.gov.uk/government/collections/precision-breeding-register-notices-and-decisions",
-      "https://www.gov.uk/government/2024-starmer-labour-government",
-      "https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs",
-      "https://www.gov.uk/environment/animal-and-plant-health"
+      "https://www.gov.uk/government/publications/precision-bred-organisms-pbo-january-2023-statement/statement-of-the-advisory-committee-on-novel-foods-and-processes-acnfp-on-precision-bred-organisms-pbos-january-2023",
+      "https://assets.publishing.service.gov.uk/media/69e0b87cf5069cdc548688de/OFF-SEN_ACNFP_PBO_statement_-_January_2023.pdf",
+      "https://www.gov.uk/government/collections/statements-of-the-products-of-genetic-technologies-pgt-subcommittee",
+      "https://www.gov.uk/government/2022-to-2024-sunak-conservative-government",
+      "https://www.gov.uk/government/organisations/advisory-committee-on-novel-foods-and-processes",
+      "https://www.gov.uk/health-and-social-care/food-safety"
     ]
   },
   {
@@ -270,22 +286,6 @@
     "attachments": [
       "https://www.gov.uk/government/publications/precision-bred-organisms-pbos-september-2022-statement/statement-of-the-advisory-committee-on-novel-foods-and-processes-acnfp-on-precision-bred-organisms-pbos-september-2022",
       "https://assets.publishing.service.gov.uk/media/69e0ed0d61d2e8e9b9e42e61/ACNFP_PBO_statement_-_September_2022.pdf",
-      "https://www.gov.uk/government/collections/statements-of-the-products-of-genetic-technologies-pgt-subcommittee",
-      "https://www.gov.uk/government/2022-to-2024-sunak-conservative-government",
-      "https://www.gov.uk/government/organisations/advisory-committee-on-novel-foods-and-processes",
-      "https://www.gov.uk/health-and-social-care/food-safety"
-    ]
-  },
-  {
-    "id": "7eabfc327302df55",
-    "title": "Precision bred organisms (PBO) January 2023 statement",
-    "description": "Statement from the Advisory Committee on Novel Foods and Processes (ACNFP) on the safety assessment and regulation of precision bred organisms (PBOs).",
-    "url": "https://www.gov.uk/government/publications/precision-bred-organisms-pbo-january-2023-statement",
-    "date": "2023-07-30",
-    "topic": "Precision bred",
-    "attachments": [
-      "https://www.gov.uk/government/publications/precision-bred-organisms-pbo-january-2023-statement/statement-of-the-advisory-committee-on-novel-foods-and-processes-acnfp-on-precision-bred-organisms-pbos-january-2023",
-      "https://assets.publishing.service.gov.uk/media/69e0b87cf5069cdc548688de/OFF-SEN_ACNFP_PBO_statement_-_January_2023.pdf",
       "https://www.gov.uk/government/collections/statements-of-the-products-of-genetic-technologies-pgt-subcommittee",
       "https://www.gov.uk/government/2022-to-2024-sunak-conservative-government",
       "https://www.gov.uk/government/organisations/advisory-committee-on-novel-foods-and-processes",

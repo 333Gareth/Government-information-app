@@ -1,0 +1,15 @@
+{
+  "profile_name": "🌱 Net Zero & Energy Policy",
+  "rules": {
+    "Carbon & Emissions": {
+      "color": [0.3, 0.85, 0.4],
+      "terms": {
+        "net zero": true,
+        "carbon emission*": true,
+        "decarbonisation": true,
+        "renewable energy": true,
+        "greenhouse gas": true
+      }
+    }
+  }
+}

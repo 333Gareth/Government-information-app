@@ -1,0 +1,41 @@
+{
+  "profile_name": "🎯 Strategic Focus",
+  "rules": {
+    "Strategic & Planning": {
+      "color": [1.0, 0.9, 0.2],
+      "terms": {
+        "blueprint": true,
+        "priority": true,
+        "key objective": true,
+        "reform": true,
+        "standard": true,
+        "strategy": true,
+        "framework": true,
+        "roadmap": true
+      }
+    },
+    "Implementation & Testing": {
+      "color": [0.3, 0.85, 0.4],
+      "terms": {
+        "tests": true,
+        "trial": true,
+        "infrastructure": true,
+        "digital infrastructure": true,
+        "structural": true,
+        "analytics": true,
+        "intelligence": true
+      }
+    },
+    "Governance & Security": {
+      "color": [1.0, 0.35, 0.35],
+      "terms": {
+        "7 principles of public life": true,
+        "opportunities": true,
+        "opportunity": true,
+        "warfare": true,
+        "private sector investment": true,
+        "war": true
+      }
+    }
+  }
+}

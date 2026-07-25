@@ -1,0 +1,19 @@
+{
+  "profile_name": "💷 Funding & Budget",
+  "rules": {
+    "Funding & Budget": {
+      "color": [0.3, 0.85, 0.4],
+      "terms": {
+        "budget": true,
+        "grant*": true,
+        "funding": true,
+        "expenditure": true,
+        "allocation": true,
+        "efficiency": true,
+        "audit": true,
+        "cost*": true,
+        "savings": true
+      }
+    }
+  }
+}

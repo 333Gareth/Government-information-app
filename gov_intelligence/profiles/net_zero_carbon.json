@@ -1,0 +1,17 @@
+{
+  "profile_name": "🌱 Net Zero & Carbon",
+  "rules": {
+    "Net Zero & Carbon": {
+      "color": [0.2, 0.8, 0.8],
+      "terms": {
+        "net zero": true,
+        "carbon": true,
+        "emission*": true,
+        "sustainability": true,
+        "environmental impact": true,
+        "biodiversity": true,
+        "waste": true
+      }
+    }
+  }
+}

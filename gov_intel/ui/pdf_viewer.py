@@ -22,6 +22,30 @@ _COLOR_BY_LABEL = {
 _DEFAULT_COLOR = (1, 1, 0)  # Yellow
 
 
+def _rgb_to_badge(rgb: tuple[float, float, float] | list[float]) -> str:
+    """Returns a matching visual badge for sidebar highlights index."""
+    if not rgb or len(rgb) < 3:
+        return "🟨"
+    r, g, b = rgb[0], rgb[1], rgb[2]
+    if r > 0.8 and g > 0.7:
+        return "🟨"
+    elif r > 0.8 and g < 0.5 and b < 0.5:
+        return "🟥"
+    elif g > 0.7 and r < 0.5:
+        return "🟩"
+    elif b > 0.8 and r < 0.5:
+        return "🟦"
+    elif r > 0.6 and b > 0.6:
+        return "🟪"
+    elif r > 0.8 and g > 0.5:
+        return "🟧"
+    elif g > 0.7 and b > 0.7:
+        return "🌐"
+    elif r > 0.8 and b > 0.6:
+        return "🩷"
+    return "🟨"
+
+
 class PDFViewerWidget(ttk.Frame):
     """Scrollable, zoomable PDF renderer with interactive canvas overlay, search highlighting, and TOC."""
 
@@ -104,7 +128,7 @@ class PDFViewerWidget(ttk.Frame):
         body.pack(fill="both", expand=True)
 
         # 3-Tab Sidebar: Pages, Outline, Highlights
-        self.sidebar_nb = ttk.Notebook(body, width=190)
+        self.sidebar_nb = ttk.Notebook(body, width=200)
         self.sidebar_nb.pack(side="left", fill="y")
 
         # Tab 1: Pages
@@ -124,7 +148,7 @@ class PDFViewerWidget(ttk.Frame):
         # Tab 3: Highlights Navigation
         f_hl = ttk.Frame(self.sidebar_nb)
         self.sidebar_nb.add(f_hl, text="Highlights")
-        self.lb_highlights = tk.Listbox(f_hl, bg="#fef08a", exportselection=False, font=("Segoe UI", 9))
+        self.lb_highlights = tk.Listbox(f_hl, bg="#ffffff", exportselection=False, font=("Segoe UI", 9))
         self.lb_highlights.pack(fill="both", expand=True)
         self.lb_highlights.bind("<<ListboxSelect>>", self._on_highlight_item_select)
 
@@ -180,9 +204,11 @@ class PDFViewerWidget(ttk.Frame):
 
         for item in self.toc_tree.get_children():
             self.toc_tree.delete(item)
+            
         toc = self.doc_obj.get_toc()
-        for _lvl, title, page_no in toc:
-            self.toc_tree.insert("", "end", iid=f"page_{page_no}", text=f"{title} (p.{page_no})")
+        for idx, (_lvl, title, page_no) in enumerate(toc):
+            # Using unique item ID index to prevent duplicate key collisions for identical page numbers
+            self.toc_tree.insert("", "end", iid=f"toc_{idx}_{page_no}", text=f"{title} (p.{page_no})")
 
         self.render()
 
@@ -225,9 +251,10 @@ class PDFViewerWidget(ttk.Frame):
     def _on_toc_select(self, _event: tk.Event) -> None:
         sel = self.toc_tree.selection()
         if sel:
-            p_str = sel[0].replace("page_", "")
-            if p_str.isdigit():
-                self.scroll_to_page(int(p_str) - 1)
+            parts = sel[0].split("_")
+            if len(parts) >= 3 and parts[-1].isdigit():
+                p_num = int(parts[-1]) - 1
+                self.scroll_to_page(p_num)
 
     def _on_highlight_item_select(self, _event: tk.Event) -> None:
         sel = self.lb_highlights.curselection()
@@ -249,7 +276,7 @@ class PDFViewerWidget(ttk.Frame):
         if not term or not self.doc_obj:
             return
         self.search_matches = []
-        flags = 0 if self.match_case.get() else fitz.TEXT_DECASE
+        flags = getattr(fitz, "TEXT_PRESERVE_CASE", 1) if self.match_case.get() else 0
 
         for p_num in range(len(self.doc_obj)):
             page = self.doc_obj[p_num]
@@ -337,6 +364,7 @@ class PDFViewerWidget(ttk.Frame):
                 for q in quads:
                     annot = page.add_highlight_annot(q)
                     annot.set_colors(stroke=self.highlight_color)
+                    annot.set_opacity(0.35)
                     annot.update()
                 if quads:
                     self.render()
@@ -404,7 +432,8 @@ class PDFViewerWidget(ttk.Frame):
     def _change_color(self, _event: tk.Event) -> None:
         self.highlight_color = _COLOR_BY_LABEL.get(self.color_cb.get(), _DEFAULT_COLOR)
 
-    def auto_highlight(self) -> None:
+    def auto_highlight(self, show_dialog: bool = True) -> None:
+        """Enhanced auto-highlight engine supporting multi-word phrases, line splits, and wildcards."""
         if not self.doc_obj:
             return
         rules = self.get_kw_rules_cb()
@@ -412,55 +441,89 @@ class PDFViewerWidget(ttk.Frame):
         self.auto_highlights_index = []
         self.lb_highlights.delete(0, tk.END)
 
+        no_text_pages = []
+
         for p_num in range(len(self.doc_obj)):
             page = self.doc_obj[p_num]
-            sentences = re.split(r"(?<!\w\.\w.)(?<=\.|\?)\s", page.get_text("text"))
-            for s in sentences:
-                clean_s = s.strip().replace("\n", " ")
-                if len(clean_s) < 15:
+            raw_p_text = page.get_text("text")
+
+            if not raw_p_text.strip():
+                no_text_pages.append(p_num + 1)
+                continue
+
+            p_text_normalized = " ".join(raw_p_text.replace('\xa0', ' ').split()).lower()
+            highlighted_rects_on_page = set()
+
+            for cat, data in rules.items():
+                raw_color = data.get("color", [1.0, 0.9, 0.2])
+
+                clean_rgb = []
+                for val in raw_color:
+                    clean_rgb.append(val / 255.0 if val > 1.0 else float(val))
+                cat_color = tuple(clean_rgb)
+
+                badge = _rgb_to_badge(cat_color)
+                active_terms = [t for t, enabled in data.get("terms", {}).items() if enabled]
+                if not active_terms:
                     continue
-                lower_s = clean_s.lower()
 
-                for cat, data in rules.items():
-                    active_terms = [t for t, enabled in data.get("terms", {}).items() if enabled]
-                    if not active_terms:
+                for term in active_terms:
+                    term_clean = term.strip().lower()
+                    if not term_clean:
                         continue
 
-                    # Check for wildcard patterns or direct substrings
-                    matched_term = None
-                    for t in active_terms:
-                        if "*" in t or "?" in t:
-                            words = lower_s.split()
-                            if any(fnmatch.fnmatch(w, t) for w in words):
-                                matched_term = t
-                                break
-                        elif t in lower_s:
-                            matched_term = t
-                            break
+                    matching_queries = []
+                    if ("*" in term_clean or "?" in term_clean) and (" " not in term_clean):
+                        words = set(re.findall(r'\b[\w\-]+\b', p_text_normalized))
+                        for w in words:
+                            if fnmatch.fnmatch(w, term_clean):
+                                matching_queries.append(w)
+                    else:
+                        if term_clean in p_text_normalized:
+                            matching_queries.append(term_clean)
 
-                    if not matched_term:
-                        continue
+                    for search_term in matching_queries:
+                        rects = page.search_for(search_term)
 
-                    rects = page.search_for(s.strip())
-                    for inst in rects:
-                        annot = page.add_highlight_annot(inst)
-                        annot.set_colors(stroke=tuple(data["color"]))
-                        annot.update()
-                        count += 1
+                        if not rects and " " in search_term:
+                            words = search_term.split()
+                            word_rects = []
+                            for w in words:
+                                word_rects.extend(page.search_for(w))
+                            rects = word_rects
 
-                    if rects:
-                        snippet_label = f"P.{p_num + 1} [{cat[:10]}] {clean_s[:30]}..."
-                        self.lb_highlights.insert(tk.END, snippet_label)
-                        self.auto_highlights_index.append({
-                            "page_num": p_num,
-                            "y_offset": rects[0].y0,
-                            "text": clean_s,
-                        })
+                        for rect in rects:
+                            rect_key = (round(rect.x0), round(rect.y0), round(rect.x1), round(rect.y1))
+                            if rect_key in highlighted_rects_on_page:
+                                continue
+                            highlighted_rects_on_page.add(rect_key)
+
+                            annot = page.add_highlight_annot(rect)
+                            annot.set_colors(stroke=cat_color)
+                            annot.set_opacity(0.35)
+                            annot.update()
+                            count += 1
+
+                            lines = [line.strip() for line in raw_p_text.splitlines() if any(w in line.lower() for w in search_term.split())]
+                            snippet = lines[0][:32] if lines else search_term
+
+                            snippet_label = f"{badge} P.{p_num + 1} [{cat[:10]}] {snippet}..."
+                            self.lb_highlights.insert(tk.END, snippet_label)
+                            self.auto_highlights_index.append({
+                                "page_num": p_num,
+                                "y_offset": rect.y0,
+                                "text": snippet,
+                            })
 
         if count > 0:
             self.render()
-            self.sidebar_nb.select(2)  # Switch sidebar tab to "Highlights"
-        messagebox.showinfo("Auto Highlight", f"Applied {count} highlights across the PDF!")
+            self.sidebar_nb.select(2)
+
+        if show_dialog:
+            msg = f"Applied {count} translucent highlight(s) matching your categories!"
+            if no_text_pages:
+                msg += f"\n\n⚠️ Note: Page(s) {', '.join(map(str, no_text_pages[:5]))} contain no extractable text."
+            messagebox.showinfo("Auto Highlight Results", msg)
 
     def save_pdf(self) -> None:
         if not (self.doc_obj and self.pdf_path):

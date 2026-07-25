@@ -22,49 +22,49 @@ TOTAL: 20
    🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26006
    ↳ Details of a notification to release a precision bred cabbage plant in England.
 
-📌 [6] Precision bred organism release notice (reference: PBR/26/005)
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26005
-   ↳ Details of a notification to release a precision bred tomato plant in England.
-
-📌 [7] Precision bred organism release notice (reference: PBR/26/001)
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26001
-   ↳ Details of a notification to release a precision bred camelina plant in England. 
-
-📌 [8] Precision bred organism marketing notice (reference: PBM/25/HOVU/001)
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25hovu001
-   ↳ Information on a precision breeding marketing notice submitted for a barley plant and its precision bred status.
-
-📌 [9] Precision bred organism marketing notice (reference: PBM/26/TRAE/001)
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm26trae001
-   ↳ Information on a precision breeding marketing notice submitted for a wheat plant and its precision bred status.
-
-📌 [10] Precision bred organism marketing notice (reference: PBM/25/SOTU/002)
+📌 [6] Precision bred organism marketing notice (reference: PBM/25/SOTU/002)
    🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25sotu002
    ↳ Information on a precision breeding marketing notice submitted for potato plants and their precision bred status.
 
-📌 [11] Precision bred organism release notice (reference: PBR/26/004)
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26004
-   ↳ Details of a notification to release a precision bred soy bean plant in England.
+📌 [7] Precision bred organism release notice (reference: PBR/26/005)
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26005
+   ↳ Details of a notification to release a precision bred tomato plant in England.
 
-📌 [12] Precision bred organism release notice (reference: PBR/26/003)
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26003
-   ↳ Details of a notification to release a precision bred oilseed rape plant in England.
+📌 [8] Precision bred organism release notice (reference: PBR/26/001)
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26001
+   ↳ Details of a notification to release a precision bred camelina plant in England. 
 
-📌 [13] Change in circumstances affecting a market authorisation
-   🔗 Link: https://www.gov.uk/guidance/change-in-circumstances-affecting-a-market-authorisation
-   ↳ Guidance for applicants requiring a food and/or feed marketing authorisation for a Precision Bred Organism (PBO).
+📌 [9] Precision bred organism marketing notice (reference: PBM/25/HOVU/001)
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm25hovu001
+   ↳ Information on a precision breeding marketing notice submitted for a barley plant and its precision bred status.
 
-📌 [14] Precision bred organism release notice (reference: PBR/26/002)
+📌 [10] Precision bred organism marketing notice (reference: PBM/26/TRAE/001)
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-marketing-notice-reference-pbm26trae001
+   ↳ Information on a precision breeding marketing notice submitted for a wheat plant and its precision bred status.
+
+📌 [11] Precision bred organism release notice (reference: PBR/26/002)
    🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26002
    ↳ Details of a notification to release a precision bred pea plant in England.
 
-📌 [15] Precision bred organisms (PBOs) September 2022 statement
-   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organisms-pbos-september-2022-statement
-   ↳ Statement from the Advisory Committee on Novel Foods and Processes (ACNFP) on scientific considerations for regulating precision bred organisms (PBOs).
+📌 [12] Precision bred organism release notice (reference: PBR/26/004)
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26004
+   ↳ Details of a notification to release a precision bred soy bean plant in England.
 
-📌 [16] Precision bred organisms (PBO) January 2023 statement
+📌 [13] Precision bred organism release notice (reference: PBR/26/003)
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organism-release-notice-reference-pbr26003
+   ↳ Details of a notification to release a precision bred oilseed rape plant in England.
+
+📌 [14] Change in circumstances affecting a market authorisation
+   🔗 Link: https://www.gov.uk/guidance/change-in-circumstances-affecting-a-market-authorisation
+   ↳ Guidance for applicants requiring a food and/or feed marketing authorisation for a Precision Bred Organism (PBO).
+
+📌 [15] Precision bred organisms (PBO) January 2023 statement
    🔗 Link: https://www.gov.uk/government/publications/precision-bred-organisms-pbo-january-2023-statement
    ↳ Statement from the Advisory Committee on Novel Foods and Processes (ACNFP) on the safety assessment and regulation of precision bred organisms (PBOs).
+
+📌 [16] Precision bred organisms (PBOs) September 2022 statement
+   🔗 Link: https://www.gov.uk/government/publications/precision-bred-organisms-pbos-september-2022-statement
+   ↳ Statement from the Advisory Committee on Novel Foods and Processes (ACNFP) on scientific considerations for regulating precision bred organisms (PBOs).
 
 📌 [17] Precision bred organisms (PBO) July 2023 statement
    🔗 Link: https://www.gov.uk/government/publications/precision-bred-organisms-pbo-july-2023-statement

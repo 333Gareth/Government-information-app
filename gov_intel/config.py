@@ -20,6 +20,7 @@ KEYWORDS_FILE = DATA_DIR / "keywords.json"
 HISTORY_FILE = DATA_DIR / "search_history.json"
 TAGS_FILE = DATA_DIR / "document_tags.json"
 TOPICS_DIR = DATA_DIR / "topics"
+PROFILES_DIR = DATA_DIR / "profiles"
 
 MAX_HISTORY_ITEMS = 50
 CSV_PREVIEW_ROW_LIMIT = 500
@@ -75,3 +76,4 @@ def ensure_data_dirs() -> None:
     """Create the on-disk data directories if they don't already exist."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     TOPICS_DIR.mkdir(parents=True, exist_ok=True)
+    PROFILES_DIR.mkdir(parents=True, exist_ok=True)

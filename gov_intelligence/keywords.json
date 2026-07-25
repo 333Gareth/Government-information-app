@@ -1,55 +1,152 @@
 {
-  "Mandates & Legal 🟥": {
+  "Artificial Intelligence": {
     "color": [
-      1,
-      0.2,
-      0.2
+      0.3,
+      0.65,
+      1.0
     ],
     "terms": {
-      "must": true,
-      "shall": true,
-      "prohibited": true,
-      "illegal": true,
-      "enforcement": true,
-      "penalty": true,
-      "mandate": true,
-      "required": true
+      "artificial intelligence": true,
+      "machine learning": true,
+      "algorithm*": true,
+      "large language model*": true,
+      "automation": true,
+      "data governance": true
     }
   },
-  "Financial & Budget 🟩": {
+  "Cybersecurity & Cloud": {
     "color": [
-      0.2,
-      0.9,
-      0.2
+      1.0,
+      0.35,
+      0.35
+    ],
+    "terms": {
+      "cybersecurity": true,
+      "cloud computing": true,
+      "encryption": true,
+      "vulnerability": true,
+      "zero trust": true
+    }
+  },
+  "Funding & Budget": {
+    "color": [
+      0.3,
+      0.85,
+      0.4
     ],
     "terms": {
       "budget": true,
+      "grant*": true,
       "funding": true,
-      "allocation": true,
       "expenditure": true,
-      "grant": true,
-      "investment": true,
-      "cost": true
+      "allocation": true,
+      "efficiency": true,
+      "audit": true,
+      "cost*": true,
+      "savings": true
     }
   },
-  "Deadlines & Timelines 🟦": {
+  "Governance & Security": {
     "color": [
-      0.3,
-      0.6,
-      1
+      1.0,
+      0.35,
+      0.35
     ],
     "terms": {
-      "deadline": true,
-      "expires": true,
-      "timeline": true,
-      "target date": true,
-      "milestone": true,
-      "effective date": true
+      "7 principles of public life": true,
+      "opportunities": true,
+      "opportunity": true,
+      "warfare": true,
+      "private sector investment": true,
+      "war": true,
+      "statutory": true,
+      "act": true,
+      "clause": true,
+      "compliance": true,
+      "regulation*": true,
+      "penalty": true,
+      "offence": true,
+      "breach*": true,
+      "liability": true
     }
   },
-  "Strategic Focus 🟨": {
+  "Implementation & Testing": {
     "color": [
-      1,
+      0.3,
+      0.85,
+      0.4
+    ],
+    "terms": {
+      "tests": true,
+      "trial": true,
+      "infrastructure": true,
+      "digital infrastructure": true,
+      "structural": true,
+      "analytics": true,
+      "intelligence": true
+    }
+  },
+  "Carbon & Emissions": {
+    "color": [
+      0.3,
+      0.85,
+      0.4
+    ],
+    "terms": {
+      "net zero": true,
+      "carbon emission*": true,
+      "decarbonisation": true,
+      "renewable energy": true,
+      "greenhouse gas": true
+    }
+  },
+  "Net Zero & Carbon": {
+    "color": [
+      0.2,
+      0.8,
+      0.8
+    ],
+    "terms": {
+      "net zero": true,
+      "carbon": true,
+      "emission*": true,
+      "sustainability": true,
+      "environmental impact": true,
+      "biodiversity": true,
+      "waste": true
+    }
+  },
+  "Healthcare Delivery": {
+    "color": [
+      0.2,
+      0.8,
+      0.8
+    ],
+    "terms": {
+      "nhs trust": true,
+      "patient care": true,
+      "clinical trial*": true,
+      "hospital admission*": true,
+      "general practice": true
+    }
+  },
+  "Funding & Workforce": {
+    "color": [
+      1.0,
+      0.6,
+      0.2
+    ],
+    "terms": {
+      "workforce shortage": true,
+      "health budget": true,
+      "recruitment": true,
+      "nurse*": true,
+      "doctor*": true
+    }
+  },
+  "Strategic & Planning": {
+    "color": [
+      1.0,
       0.9,
       0.2
     ],
@@ -60,13 +157,14 @@
       "reform": true,
       "standard": true,
       "strategy": true,
-      "framework": true
+      "framework": true,
+      "roadmap": true
     }
   },
   "Technology & Cyber": {
     "color": [
-      0.2,
-      0.6,
+      0.3,
+      0.65,
       1.0
     ],
     "terms": {
@@ -74,47 +172,13 @@
       "cyber": true,
       "cloud": true,
       "api": true,
-      "artificial intelligence": true
-    }
-  },
-  "Procurement & Vendors": {
-    "color": [
-      0.8,
-      0.3,
-      0.9
-    ],
-    "terms": {
+      "artificial intelligence": true,
+      "machine learning": true,
+      "algorithm*": true,
       "supplier": true,
       "vendor": true,
       "contract*": true,
       "tender": true
-    }
-  },
-  "Legal & Statutory": {
-    "color": [
-      1,
-      0.2,
-      0.2
-    ],
-    "terms": {
-      "statutory": true,
-      "act": true,
-      "clause": true,
-      "compliance": true,
-      "regulation*": true
-    }
-  },
-  "Enforcement & Risks": {
-    "color": [
-      0.9,
-      0.4,
-      0.1
-    ],
-    "terms": {
-      "penalty": true,
-      "offence": true,
-      "breach*": true,
-      "liability": true
     }
   }
 }

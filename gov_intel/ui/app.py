@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import threading
 import webbrowser
 from datetime import datetime
@@ -13,8 +14,8 @@ import requests
 import tkinter as tk
 from tkinter import colorchooser, filedialog, messagebox, scrolledtext, simpledialog, ttk
 
-from .. import archive, config
-from ..app_state import PRESET_POLICY_TEMPLATES, AppState
+from .. import ai_engine, archive, config
+from ..app_state import AppState
 from ..gov_api import classify_attachment_url, deep_harvest_gov_uk, sanitize_filename
 from ..models import Document
 from .data_grid import DataGridViewerWindow
@@ -29,10 +30,31 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+PALETTE_PRESETS = [
+    ("Yellow", [1.0, 0.9, 0.2], "#ffef33"),
+    ("Red", [1.0, 0.35, 0.35], "#ff5959"),
+    ("Green", [0.3, 0.85, 0.4], "#4dd866"),
+    ("Blue", [0.3, 0.65, 1.0], "#4da6ff"),
+    ("Purple", [0.75, 0.4, 0.95], "#bf66f2"),
+    ("Orange", [1.0, 0.6, 0.2], "#ff9933"),
+    ("Teal", [0.2, 0.8, 0.8], "#33cccc"),
+    ("Pink", [1.0, 0.5, 0.75], "#ff80bf"),
+]
+
 
 def _attachment_label(url: str) -> str:
     tail = url.rstrip("/").rsplit("/", 1)[-1].replace("%20", " ")
     return f"{classify_attachment_url(url)}: {tail or url}"
+
+
+def _rgb_to_hex(rgb: list[float]) -> str:
+    """Converts 0.0-1.0 float RGB values to a Hex color string."""
+    if not rgb or len(rgb) < 3:
+        return "#ffef33"
+    r = int(max(0.0, min(1.0, rgb[0])) * 255)
+    g = int(max(0.0, min(1.0, rgb[1])) * 255)
+    b = int(max(0.0, min(1.0, rgb[2])) * 255)
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
 class GovApp:
@@ -275,8 +297,51 @@ class GovApp:
 
         briefing_frame = ttk.Frame(self.reader_nb)
         self.reader_nb.add(briefing_frame, text="📰 Briefing")
+
+        briefing_tb = ttk.Frame(briefing_frame, padding=4)
+        briefing_tb.pack(fill="x", side="top")
+
+        ttk.Button(
+            briefing_tb,
+            text="✨ Generate AI Briefing",
+            command=self.run_ai_briefing
+        ).pack(side="left", padx=4)
+
+        self.lbl_ai_status = ttk.Label(briefing_tb, text="", font=("Segoe UI", 9, "italic"))
+        self.lbl_ai_status.pack(side="left", padx=8)
+
         self.txt_briefing = scrolledtext.ScrolledText(briefing_frame, wrap="word")
         self.txt_briefing.pack(fill="both", expand=True)
+
+    def run_ai_briefing(self) -> None:
+        current_text = ""
+        if self.reader_pdf_viewer.doc_obj:
+            full_pdf_text = []
+            for page in self.reader_pdf_viewer.doc_obj:
+                full_pdf_text.append(page.get_text("text"))
+            current_text = "\n".join(full_pdf_text)
+
+        if not current_text.strip() and self.selected_doc:
+            current_text = f"{self.selected_doc.title}\n{self.selected_doc.description}"
+        if not current_text.strip():
+            current_text = self.txt_briefing.get("1.0", tk.END).strip()
+
+        if not current_text:
+            messagebox.showwarning("No Text Loaded", "Please select a document or open a PDF attachment first.")
+            return
+
+        self.lbl_ai_status.config(text="🤖 Analyzing document with local AI...")
+
+        def _worker():
+            summary = ai_engine.generate_document_briefing(current_text)
+            self.root.after(0, lambda: self._display_ai_summary(summary))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _display_ai_summary(self, summary_text: str) -> None:
+        self.txt_briefing.delete("1.0", tk.END)
+        self.txt_briefing.insert(tk.END, summary_text)
+        self.lbl_ai_status.config(text="✅ AI Analysis Complete!")
 
     def refresh_doc_list(self) -> None:
         self.lb_docs.delete(0, tk.END)
@@ -354,6 +419,23 @@ class GovApp:
         pv = PDFViewerWidget(pop, lambda: self.state.keyword_rules)
         pv.pack(fill="both", expand=True)
         pv.load_pdf(self.reader_pdf_viewer.pdf_path)
+
+        if self.reader_pdf_viewer.auto_highlights_index:
+            pv.auto_highlight(show_dialog=False)
+
+    def pop_out_fav_pdf(self) -> None:
+        if not self.fav_pdf_viewer.pdf_path:
+            messagebox.showinfo("No Document Loaded", "Open a PDF attachment first to pop out the viewer.")
+            return
+        pop = tk.Toplevel(self.root)
+        pop.title(f"📖 {os.path.basename(self.fav_pdf_viewer.pdf_path)}")
+        pop.geometry("1100x850")
+        pv = PDFViewerWidget(pop, lambda: self.state.keyword_rules)
+        pv.pack(fill="both", expand=True)
+        pv.load_pdf(self.fav_pdf_viewer.pdf_path)
+
+        if self.fav_pdf_viewer.auto_highlights_index:
+            pv.auto_highlight(show_dialog=False)
 
     def _route_attachment_open(self, url: str, viewer: PDFViewerWidget, notebook: ttk.Notebook) -> None:
         tag = classify_attachment_url(url)
@@ -493,146 +575,283 @@ class GovApp:
             webbrowser.open_new_tab(self.state.favorite_sources[ids[sel[0]]]["url"])
 
     def on_fav_att_open(self, _event) -> None:
-        sel = self.lb_fav_atts.curselection()
+        sel = self.lb_favs.curselection()
         if sel and self.fav_active_atts:
             self._route_attachment_open(self.fav_active_atts[sel[0]], viewer=self.fav_pdf_viewer, notebook=self.fav_nb)
-
-    def pop_out_fav_pdf(self) -> None:
-        if not self.fav_pdf_viewer.pdf_path:
-            messagebox.showinfo("No Document Loaded", "Open a PDF attachment first to pop out the viewer.")
-            return
-        pop = tk.Toplevel(self.root)
-        pop.title(f"📖 {os.path.basename(self.fav_pdf_viewer.pdf_path)}")
-        pop.geometry("1100x850")
-        pv = PDFViewerWidget(pop, lambda: self.state.keyword_rules)
-        pv.pack(fill="both", expand=True)
-        pv.load_pdf(self.fav_pdf_viewer.pdf_path)
 
     # ======================================================================
     # Keyword Brain tab
     # ======================================================================
     def _build_kw_tab(self) -> None:
-        f = ttk.Frame(self.tab_kw, padding=10)
+        f = ttk.Frame(self.tab_kw, padding=12)
         f.pack(fill="both", expand=True)
 
-        preset_bar = ttk.LabelFrame(f, text=" 📦 Load Policy Research Presets ", padding=8)
-        preset_bar.pack(fill="x", side="top", pady=(0, 8))
+        preset_bar = ttk.LabelFrame(f, text=" 📦 Research Profiles & Presets ", padding=8)
+        preset_bar.pack(fill="x", side="top", pady=(0, 10))
 
-        ttk.Label(preset_bar, text="Template:").pack(side="left", padx=(4, 2))
+        ttk.Label(preset_bar, text="Profile:").pack(side="left", padx=(4, 4))
         self.cb_kw_presets = ttk.Combobox(
             preset_bar,
-            values=list(PRESET_POLICY_TEMPLATES.keys()),
+            values=list(self.state.research_profiles.keys()),
             state="readonly",
-            width=35,
+            width=30,
         )
         self.cb_kw_presets.pack(side="left", padx=4)
-        if PRESET_POLICY_TEMPLATES:
-            self.cb_kw_presets.set(list(PRESET_POLICY_TEMPLATES.keys())[0])
 
-        ttk.Button(preset_bar, text="📥 Load Preset Categories", command=self.load_kw_preset).pack(side="left", padx=6)
+        ttk.Button(preset_bar, text="📥 Load Profile", command=self.load_kw_preset).pack(side="left", padx=4)
+        ttk.Button(preset_bar, text="🌐 Reset to Master Overview", command=self.load_master_overview).pack(side="left", padx=4)
+        ttk.Button(preset_bar, text="💾 Save Profile As...", command=self.save_custom_profile).pack(side="left", padx=4)
+        ttk.Button(preset_bar, text="🗑️ Delete Profile", command=self.delete_custom_profile).pack(side="left", padx=4)
+
+        self._refresh_profile_combobox()
 
         body = ttk.Frame(f)
         body.pack(fill="both", expand=True)
 
-        left = ttk.LabelFrame(body, text=" Categories ", padding=8)
-        left.pack(side="left", fill="y", padx=(0, 8))
-        self.lb_kw_cats = tk.Listbox(left, exportselection=False, width=28)
-        self.lb_kw_cats.pack(fill="both", expand=True)
-        self.lb_kw_cats.bind("<<ListboxSelect>>", self.on_kw_cat_select)
+        left = ttk.LabelFrame(body, text=" Categories & Highlight Palette ", padding=10)
+        left.pack(side="left", fill="both", expand=False, padx=(0, 8))
 
-        cat_row = ttk.Frame(left)
-        cat_row.pack(fill="x", pady=4)
-        self.e_new_cat = ttk.Entry(cat_row)
-        self.e_new_cat.pack(side="left", fill="x", expand=True)
-        ttk.Button(cat_row, text="➕", width=3, command=self.add_kw_category).pack(side="left")
-        ttk.Button(cat_row, text="🎨", width=3, command=self.pick_kw_category_color).pack(side="left", padx=2)
-        ttk.Button(cat_row, text="🗑️", width=3, command=self.remove_kw_category).pack(side="left")
+        self.tree_kw_cats = ttk.Treeview(
+            left, columns=("swatch", "name", "count"), show="headings", height=12, selectmode="browse"
+        )
+        self.tree_kw_cats.heading("swatch", text="Color", anchor="center")
+        self.tree_kw_cats.heading("name", text="Category Name", anchor="w")
+        self.tree_kw_cats.heading("count", text="Terms", anchor="center")
 
-        right = ttk.LabelFrame(body, text=" Terms (Supports Wildcards like 'grant*') ", padding=8)
+        self.tree_kw_cats.column("swatch", width=55, anchor="center")
+        self.tree_kw_cats.column("name", width=190, anchor="w")
+        self.tree_kw_cats.column("count", width=65, anchor="center")
+
+        sb_cats = ttk.Scrollbar(left, orient="vertical", command=self.tree_kw_cats.yview)
+        self.tree_kw_cats.configure(yscrollcommand=sb_cats.set)
+
+        sb_cats.pack(side="right", fill="y")
+        self.tree_kw_cats.pack(side="top", fill="both", expand=True)
+        self.tree_kw_cats.bind("<<TreeviewSelect>>", self.on_kw_cat_select)
+
+        self.color_preview_frame = ttk.Frame(left, padding=6)
+        self.color_preview_frame.pack(fill="x", side="top", pady=(8, 4))
+
+        self.lbl_selected_cat_name = ttk.Label(
+            self.color_preview_frame, text="Active: (Select a category)", font=("Segoe UI", 9, "bold")
+        )
+        self.lbl_selected_cat_name.pack(side="left", padx=(2, 6))
+
+        self.canvas_color_swatch = tk.Canvas(self.color_preview_frame, width=28, height=18, bg="#ffef33", highlightthickness=1)
+        self.canvas_color_swatch.pack(side="left", padx=2)
+
+        color_box = ttk.LabelFrame(left, text=" 🎨 Assign Highlight Color ", padding=6)
+        color_box.pack(fill="x", side="top", pady=(4, 6))
+
+        palette_frame = ttk.Frame(color_box)
+        palette_frame.pack(fill="x")
+
+        for idx, (label, rgb, hex_val) in enumerate(PALETTE_PRESETS):
+            r_idx, c_idx = divmod(idx, 4)
+            btn = tk.Button(
+                palette_frame,
+                text=label,
+                bg=hex_val,
+                fg="#000000" if label in ["Yellow", "Green", "Pink"] else "#ffffff",
+                font=("Segoe UI", 8, "bold"),
+                relief="groove",
+                command=lambda color_val=rgb: self.set_selected_category_color(color_val)
+            )
+            btn.grid(row=r_idx, column=c_idx, padx=2, pady=2, sticky="ew")
+
+        palette_frame.columnconfigure((0, 1, 2, 3), weight=1)
+
+        ttk.Button(color_box, text="🎨 Custom Color...", command=self.pick_custom_category_color).pack(fill="x", pady=(4, 0))
+
+        cat_ctrl = ttk.Frame(left)
+        cat_ctrl.pack(fill="x", side="top", pady=(6, 0))
+
+        self.e_new_cat = ttk.Entry(cat_ctrl)
+        self.e_new_cat.pack(fill="x", pady=(0, 4))
+
+        btn_row = ttk.Frame(cat_ctrl)
+        btn_row.pack(fill="x")
+        ttk.Button(btn_row, text="➕ Add Category", command=self.add_kw_category).pack(side="left", expand=True, fill="x", padx=(0, 2))
+        ttk.Button(btn_row, text="🗑️ Remove Category", command=self.remove_kw_category).pack(side="left", expand=True, fill="x", padx=(2, 0))
+
+        right = ttk.LabelFrame(body, text=" Associated Research Keywords ", padding=10)
         right.pack(side="left", fill="both", expand=True)
-        self.lb_kw_terms = tk.Listbox(right, exportselection=False)
-        self.lb_kw_terms.pack(fill="both", expand=True)
+
+        self.lbl_terms_header = ttk.Label(
+            right, text="Double-click any keyword to toggle active (☑) or inactive (☐)", font=("Segoe UI", 9, "italic")
+        )
+        self.lbl_terms_header.pack(anchor="w", pady=(0, 6))
+
+        self.lb_kw_terms = tk.Listbox(right, exportselection=False, font=("Segoe UI", 10), bg="#ffffff")
+        sb_terms = ttk.Scrollbar(right, orient="vertical", command=self.lb_kw_terms.yview)
+        self.lb_kw_terms.configure(yscrollcommand=sb_terms.set)
+
+        sb_terms.pack(side="right", fill="y")
+        self.lb_kw_terms.pack(side="top", fill="both", expand=True)
         self.lb_kw_terms.bind("<Double-1>", self.toggle_kw_term_state)
 
-        term_row = ttk.Frame(right)
-        term_row.pack(fill="x", pady=4)
-        self.e_new_kw = ttk.Entry(term_row)
-        self.e_new_kw.pack(side="left", fill="x", expand=True)
-        ttk.Button(term_row, text="➕ Add Term", command=self.add_kw_term).pack(side="left", padx=2)
-        ttk.Button(term_row, text="🗑️ Remove Term", command=self.remove_kw_term).pack(side="left", padx=2)
+        term_ctrl = ttk.Frame(right)
+        term_ctrl.pack(fill="x", pady=(8, 0))
+        self.e_new_kw = ttk.Entry(term_ctrl)
+        self.e_new_kw.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        ttk.Button(term_ctrl, text="➕ Add Keyword", command=self.add_kw_term).pack(side="left", padx=2)
+        ttk.Button(term_ctrl, text="🗑️ Remove Keyword", command=self.remove_kw_term).pack(side="left", padx=2)
 
         self.refresh_kw_categories_list()
+
+    def _refresh_profile_combobox(self) -> None:
+        profiles = list(self.state.research_profiles.keys())
+        self.cb_kw_presets.config(values=profiles)
+        if profiles:
+            self.cb_kw_presets.set(profiles[0])
 
     def load_kw_preset(self) -> None:
         preset_key = self.cb_kw_presets.get()
         if self.state.apply_preset_template(preset_key):
             self.refresh_kw_categories_list()
-            messagebox.showinfo("Preset Loaded", f"Loaded preset rules for '{preset_key}'!")
+            self.generate_analytics_matrix()
+            messagebox.showinfo("Profile Loaded", f"Loaded research profile '{preset_key}'!")
+
+    def load_master_overview(self) -> None:
+        """Reloads profiles from disk and instantly applies the Master Intelligence Overview."""
+        self.state.reload_external_profiles()
+        self._refresh_profile_combobox()
+        
+        master_key = "🌐 Master Intelligence Overview"
+        if master_key in self.state.research_profiles:
+            self.cb_kw_presets.set(master_key)
+            self.state.apply_preset_template(master_key)
+            self.refresh_kw_categories_list()
+            self.generate_analytics_matrix()
+            messagebox.showinfo("Master Overview", "Successfully reset and loaded the Master Intelligence Overview!")
+        else:
+            messagebox.showwarning("Not Found", "Master overview could not be generated. Check your JSON profile files.")
+
+    def save_custom_profile(self) -> None:
+        name = simpledialog.askstring("Save Research Profile", "Enter a name for this custom profile:")
+        if name:
+            if self.state.save_current_as_profile(name):
+                self._refresh_profile_combobox()
+                self.cb_kw_presets.set(name)
+                messagebox.showinfo("Profile Saved", f"Saved profile '{name}'!")
+
+    def delete_custom_profile(self) -> None:
+        selected = self.cb_kw_presets.get()
+        if not selected:
+            return
+        if messagebox.askyesno("Delete Profile", f"Are you sure you want to delete profile '{selected}'?"):
+            if self.state.delete_profile(selected):
+                self._refresh_profile_combobox()
+                messagebox.showinfo("Profile Deleted", f"Deleted profile '{selected}'.")
 
     def refresh_kw_categories_list(self) -> None:
-        self.lb_kw_cats.delete(0, tk.END)
-        for cat in self.state.keyword_rules:
-            self.lb_kw_cats.insert(tk.END, cat)
-        if self.state.keyword_rules:
-            self.lb_kw_cats.select_set(0)
+        for row in self.tree_kw_cats.get_children():
+            self.tree_kw_cats.delete(row)
+
+        for cat, data in self.state.keyword_rules.items():
+            rgb = data.get("color", [1.0, 0.9, 0.2])
+            hex_val = _rgb_to_hex(rgb)
+            terms_count = len(data.get("terms", {}))
+
+            item_id = self.tree_kw_cats.insert(
+                "", "end", iid=cat, values=("███", cat, f"{terms_count} terms")
+            )
+            self.tree_kw_cats.tag_configure(f"tag_{cat}", foreground=hex_val)
+            self.tree_kw_cats.item(item_id, tags=(f"tag_{cat}",))
+
+        children = self.tree_kw_cats.get_children()
+        if children:
+            self.tree_kw_cats.selection_set(children[0])
             self.on_kw_cat_select(None)
 
-    def add_kw_category(self) -> None:
-        if self.state.add_keyword_category(self.e_new_cat.get()):
-            self.e_new_cat.delete(0, tk.END)
-            self.refresh_kw_categories_list()
-
-    def pick_kw_category_color(self) -> None:
-        sel = self.lb_kw_cats.curselection()
+    def set_selected_category_color(self, rgb: list[float]) -> None:
+        sel = self.tree_kw_cats.selection()
         if not sel:
+            messagebox.showwarning("Select Category", "Please select a category from the list first.")
             return
-        cat = self.lb_kw_cats.get(sel[0])
-        curr_rgb = self.state.keyword_rules.get(cat, {}).get("color", [1.0, 0.8, 0.0])
-        hex_col = f"#{int(curr_rgb[0]*255):02x}{int(curr_rgb[1]*255):02x}{int(curr_rgb[2]*255):02x}"
-        color_rgb, color_hex = colorchooser.askcolor(initialcolor=hex_col, title=f"Choose Highlight Color for '{cat}'")
+
+        cat = sel[0]
+        self.state.set_category_color(cat, rgb)
+        self.refresh_kw_categories_list()
+        self.tree_kw_cats.selection_set(cat)
+
+    def pick_custom_category_color(self) -> None:
+        sel = self.tree_kw_cats.selection()
+        if not sel:
+            messagebox.showwarning("Select Category", "Please select a category from the list first.")
+            return
+
+        cat = sel[0]
+        curr_rgb = self.state.keyword_rules.get(cat, {}).get("color", [1.0, 0.9, 0.2])
+        hex_col = _rgb_to_hex(curr_rgb)
+
+        color_rgb, _color_hex = colorchooser.askcolor(initialcolor=hex_col, title=f"Choose Highlight Color for '{cat}'")
         if color_rgb:
             norm_color = [round(c / 255.0, 2) for c in color_rgb]
             self.state.set_category_color(cat, norm_color)
-            messagebox.showinfo("Color Updated", f"Set color for category '{cat}'!")
+            self.refresh_kw_categories_list()
+            self.tree_kw_cats.selection_set(cat)
+
+    def add_kw_category(self) -> None:
+        cat_name = self.e_new_cat.get().strip()
+        if not cat_name:
+            return
+        if self.state.add_keyword_category(cat_name):
+            self.e_new_cat.delete(0, tk.END)
+            self.refresh_kw_categories_list()
+            self.generate_analytics_matrix()
 
     def remove_kw_category(self) -> None:
-        sel = self.lb_kw_cats.curselection()
+        sel = self.tree_kw_cats.selection()
         if not sel:
             return
-        cat = self.lb_kw_cats.get(sel[0])
+        cat = sel[0]
         if self.state.remove_keyword_category(cat):
             self.refresh_kw_categories_list()
             self.lb_kw_terms.delete(0, tk.END)
+            self.generate_analytics_matrix()
 
     def on_kw_cat_select(self, _event) -> None:
-        sel = self.lb_kw_cats.curselection()
+        sel = self.tree_kw_cats.selection()
         if not sel:
             return
-        cat = self.lb_kw_cats.get(sel[0])
+        cat = sel[0]
+        data = self.state.keyword_rules.get(cat, {})
+        curr_rgb = data.get("color", [1.0, 0.9, 0.2])
+        hex_col = _rgb_to_hex(curr_rgb)
+
+        self.lbl_selected_cat_name.config(text=f"Active: {cat}")
+        self.canvas_color_swatch.config(bg=hex_col)
+
         self.lb_kw_terms.delete(0, tk.END)
-        for term, enabled in self.state.keyword_rules.get(cat, {}).get("terms", {}).items():
+        for term, enabled in data.get("terms", {}).items():
             self.lb_kw_terms.insert(tk.END, f"{'☑' if enabled else '☐'} {term}")
 
     def add_kw_term(self) -> None:
-        sel = self.lb_kw_cats.curselection()
+        sel = self.tree_kw_cats.selection()
         if not sel:
             return
-        cat = self.lb_kw_cats.get(sel[0])
+        cat = sel[0]
         if self.state.add_keyword_term(cat, self.e_new_kw.get()):
             self.on_kw_cat_select(None)
             self.e_new_kw.delete(0, tk.END)
+            self.refresh_kw_categories_list()
+            self.tree_kw_cats.selection_set(cat)
+            self.generate_analytics_matrix()
 
     def toggle_kw_term_state(self, event=None) -> None:
-        cat_sel = self.lb_kw_cats.curselection()
+        cat_sel = self.tree_kw_cats.selection()
         if not cat_sel:
             return
+        cat = cat_sel[0]
+
         index = self.lb_kw_terms.nearest(event.y) if (event and hasattr(event, "y")) else None
         if index is None:
             term_sel = self.lb_kw_terms.curselection()
             if not term_sel:
                 return
             index = term_sel[0]
-        cat = self.lb_kw_cats.get(cat_sel[0])
+
         item_str = self.lb_kw_terms.get(index)
         if not item_str:
             return
@@ -640,62 +859,201 @@ class GovApp:
         self.state.toggle_keyword_term(cat, term)
         self.on_kw_cat_select(None)
         self.lb_kw_terms.select_set(index)
+        self.generate_analytics_matrix()
 
     def remove_kw_term(self) -> None:
-        cat_sel, term_sel = self.lb_kw_cats.curselection(), self.lb_kw_terms.curselection()
+        cat_sel, term_sel = self.tree_kw_cats.selection(), self.lb_kw_terms.curselection()
         if not (cat_sel and term_sel):
             return
-        cat = self.lb_kw_cats.get(cat_sel[0])
+        cat = cat_sel[0]
         term = self.lb_kw_terms.get(term_sel[0])[2:].strip()
         if self.state.remove_keyword_term(cat, term):
             self.on_kw_cat_select(None)
+            self.refresh_kw_categories_list()
+            self.tree_kw_cats.selection_set(cat)
+            self.generate_analytics_matrix()
 
     # ======================================================================
-    # Analytics tab
+    # Analytics tab (Unified Scrollable Grid Matrix with Multi-Tier Heatmap)
     # ======================================================================
     def _build_analytics_tab(self) -> None:
         f = ttk.Frame(self.tab_analytics, padding=10)
         f.pack(fill="both", expand=True)
-        columns = ["title"] + list(self.state.keyword_rules.keys())
-        self.analytics_tree = ttk.Treeview(f, columns=columns, show="headings")
 
-        for col in columns:
-            is_title = (col == "title")
-            col_heading = "Document Title" if is_title else col
-            alignment = "w" if is_title else "center"
+        self.summary_card = ttk.LabelFrame(f, text=" 📊 Policy Intelligence Matrix ", padding=8)
+        self.summary_card.pack(fill="x", side="top", pady=(0, 6))
 
-            self.analytics_tree.heading(col, text=col_heading, anchor=alignment)
-            self.analytics_tree.column(col, width=320 if is_title else 140, anchor=alignment)
+        self.lbl_analytics_summary = ttk.Label(
+            self.summary_card,
+            text="Load sources via Control Panel to calculate category density matrix...",
+            font=("Segoe UI", 10, "bold"),
+            foreground="#00247D",
+        )
+        self.lbl_analytics_summary.pack(side="left", padx=4)
 
-        self.analytics_tree.pack(fill="both", expand=True)
-        self.analytics_tree.bind("<Double-1>", self.on_analytics_doc_double_click)
+        container = ttk.Frame(f)
+        container.pack(fill="both", expand=True)
+
+        self.analytics_canvas = tk.Canvas(container, bg="#ffffff", highlightthickness=0)
+        sb_y = ttk.Scrollbar(container, orient="vertical", command=self.analytics_canvas.yview)
+        sb_x = ttk.Scrollbar(container, orient="horizontal", command=self.analytics_canvas.xview)
+        self.analytics_canvas.configure(yscrollcommand=sb_y.set, xscrollcommand=sb_x.set)
+
+        sb_x.pack(side="bottom", fill="x")
+        sb_y.pack(side="right", fill="y")
+        self.analytics_canvas.pack(side="left", fill="both", expand=True)
+
+        self.matrix_grid_frame = tk.Frame(self.analytics_canvas, bg="#ffffff")
+        self.canvas_window_id = self.analytics_canvas.create_window((0, 0), window=self.matrix_grid_frame, anchor="nw")
+
+        self.matrix_grid_frame.bind("<Configure>", lambda e: self.analytics_canvas.configure(scrollregion=self.analytics_canvas.bbox("all")))
+        self.analytics_canvas.bind("<Configure>", lambda e: self.analytics_canvas.itemconfig(self.canvas_window_id, minwidth=e.width))
 
     def generate_analytics_matrix(self) -> None:
-        for row in self.analytics_tree.get_children():
-            self.analytics_tree.delete(row)
+        """Renders headers, a summary legend, and density rows with an intuitive multi-tier heatmap scale."""
+        for w in self.matrix_grid_frame.winfo_children():
+            w.destroy()
+
         categories = list(self.state.keyword_rules.keys())
-        for idx, doc in enumerate(self.active_docs):
+        columns = ["Document Title"] + categories
+
+        if not self.active_docs:
+            self.lbl_analytics_summary.config(text="Load sources via Control Panel to calculate density matrix.")
+            return
+
+        # Render Heatmap Legend Bar inside the summary card frame
+        legend_frame = ttk.Frame(self.summary_card)
+        legend_frame.pack(side="right", padx=10)
+        
+        ttk.Label(legend_frame, text="Heatmap Scale:", font=("Segoe UI", 8, "bold")).pack(side="left", padx=4)
+        legend_steps = [
+            ("None", "#ffffff", "#0f172a"),
+            ("Low (1-2)", "#fef9c3", "#713f12"),
+            ("Med (3-5)", "#fef08a", "#854d0e"),
+            ("High (6-9)", "#fde047", "#713f12"),
+            ("Intense (10+)", "#fca5a5", "#7f1d1d")
+        ]
+        for label, bg_c, fg_c in legend_steps:
+            lbl_leg = tk.Label(legend_frame, text=f" {label} ", bg=bg_c, fg=fg_c, font=("Segoe UI", 8), relief="solid", bd=1)
+            lbl_leg.pack(side="left", padx=2)
+
+        # Configure Grid Weights (using minsize to prevent crashes)
+        self.matrix_grid_frame.columnconfigure(0, weight=4, minsize=350)
+        for col_idx in range(1, len(columns)):
+            self.matrix_grid_frame.columnconfigure(col_idx, weight=1, minsize=110)
+
+        # Render Header Row
+        for col_idx, heading_text in enumerate(columns):
+            is_title = (col_idx == 0)
+            lbl = tk.Label(
+                self.matrix_grid_frame,
+                text=heading_text,
+                font=("Segoe UI", 9, "bold"),
+                bg="#00247d" if is_title else "#1e293b",
+                fg="#ffffff",
+                anchor="w" if is_title else "center",
+                padx=10,
+                pady=10,
+                justify="left" if is_title else "center",
+                wraplength=320 if is_title else 100,
+                relief="ridge",
+                bd=1,
+            )
+            lbl.grid(row=0, column=col_idx, sticky="nsew")
+
+        cat_totals = {cat: 0 for cat in categories}
+        total_occurrences = 0
+
+        doc_category_counts = []
+        for doc in self.active_docs:
             haystack = f"{doc.title} {doc.description}".lower()
-            row_vals = [doc.title]
+            row_counts = {}
             for cat in categories:
                 terms = self.state.keyword_rules[cat].get("terms", {})
                 active_terms = [t for t, enabled in terms.items() if enabled]
-                matches = sum(haystack.count(t) for t in active_terms)
-                row_vals.append(matches)
-            self.analytics_tree.insert("", "end", iid=str(idx), values=row_vals)
 
-    def on_analytics_doc_double_click(self, _event) -> None:
-        sel = self.analytics_tree.selection()
-        if not sel:
-            return
-        doc_idx = int(sel[0])
-        if not (0 <= doc_idx < len(self.active_docs)):
-            return
-        self.lb_docs.selection_clear(0, tk.END)
-        self.lb_docs.selection_set(doc_idx)
-        self.lb_docs.see(doc_idx)
-        self.on_doc_select(None)
-        self.nb.select(self.tab_reader)
+                count = 0
+                for t in active_terms:
+                    t_clean = t.strip().lower()
+                    if "*" in t_clean:
+                        prefix = t_clean.replace("*", "")
+                        count += len(re.findall(r'\b' + re.escape(prefix) + r'\w*', haystack))
+                    else:
+                        count += haystack.count(t_clean)
+                row_counts[cat] = count
+                cat_totals[cat] += count
+                total_occurrences += count
+            doc_category_counts.append(row_counts)
+
+        # Render Data Rows with Multi-Tier Heatmap Coloring
+        for row_idx, (doc, row_counts) in enumerate(zip(self.active_docs, doc_category_counts), start=1):
+            row_bg = "#f8fafc" if row_idx % 2 == 0 else "#ffffff"
+
+            # Title Cell
+            lbl_title = tk.Label(
+                self.matrix_grid_frame,
+                text=doc.title,
+                font=("Segoe UI", 9),
+                bg=row_bg,
+                fg="#0f172a",
+                anchor="w",
+                padx=10,
+                pady=8,
+                justify="left",
+                wraplength=350,
+                relief="solid",
+                bd=1,
+            )
+            lbl_title.grid(row=row_idx, column=0, sticky="nsew")
+            lbl_title.bind("<Double-1>", lambda e, idx=row_idx - 1: self.jump_to_reader_doc(idx))
+
+            # Category Count Cells with Tiered Heatmap Rules
+            for col_idx, cat in enumerate(categories, start=1):
+                count = row_counts[cat]
+
+                cell_bg = row_bg
+                cell_fg = "#0f172a"
+                
+                if count >= 10:
+                    cell_bg, cell_fg = "#fca5a5", "#7f1d1d"  # Intense Red/Coral
+                elif count >= 6:
+                    cell_bg, cell_fg = "#fde047", "#713f12"  # Bright Yellow/Amber
+                elif count >= 3:
+                    cell_bg, cell_fg = "#fef08a", "#854d0e"  # Medium Yellow
+                elif count >= 1:
+                    cell_bg, cell_fg = "#fef9c3", "#a16207"  # Soft Yellow
+
+                lbl_val = tk.Label(
+                    self.matrix_grid_frame,
+                    text=str(count) if count > 0 else "—",
+                    font=("Segoe UI", 9, "bold" if count > 0 else "normal"),
+                    bg=cell_bg,
+                    fg=cell_fg,
+                    anchor="center",
+                    padx=6,
+                    pady=8,
+                    relief="solid",
+                    bd=1,
+                )
+                lbl_val.grid(row=row_idx, column=col_idx, sticky="nsew")
+
+        num_docs = len(self.active_docs)
+        if num_docs > 0:
+            top_cat = max(cat_totals, key=cat_totals.get) if cat_totals else "None"
+            top_count = cat_totals.get(top_cat, 0)
+            self.lbl_analytics_summary.config(
+                text=f"📄 {num_docs} Documents Scanned  |  🎯 Total Keyword Hits: {total_occurrences}  |  🔥 Dominant Domain: '{top_cat}' ({top_count} hits)"
+            )
+        else:
+            self.lbl_analytics_summary.config(text="Load sources via Control Panel to calculate density matrix.")
+
+    def jump_to_reader_doc(self, doc_idx: int) -> None:
+        if 0 <= doc_idx < len(self.active_docs):
+            self.lb_docs.selection_clear(0, tk.END)
+            self.lb_docs.selection_set(doc_idx)
+            self.lb_docs.see(doc_idx)
+            self.on_doc_select(None)
+            self.nb.select(self.tab_reader)
 
     # ======================================================================
     # Dialogs / misc tools
